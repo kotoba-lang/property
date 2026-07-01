@@ -68,3 +68,9 @@ escaped) for parcels, listings and leases (term-overlap flagged).
 ## License
 
 Apache License 2.0.
+
+## Test
+
+```bash
+clojure -M:test
+```
