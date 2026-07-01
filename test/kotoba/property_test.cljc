@@ -20,3 +20,19 @@
   (is (true? (:property/valid? (prop/validate-listing (prop/listing "L1" "P1" :rent 1000)))))
   (is (= :unknown-type (:property/error (prop/validate-listing {:listing/id "L1" :listing/type :auction}))))
   (is (= :not-a-map (:property/error (prop/validate-listing "x")))))
+
+(deftest listing-edge-cases
+  (testing "unknown listing type is rejected"
+    (is (nil? (prop/listing "L1" "P1" :auction 100))))
+  (testing "validate-listing rejects non-map"
+    (is (= :not-a-map (:property/error (prop/validate-listing "x"))))))
+
+(deftest lease-edge-cases
+  (testing "non-overlapping adjacent terms do not overlap"
+    (let [a (prop/lease "L1" "P1" "T" "LL" 1000 "2026-01-01" "2026-01-31")
+          b (prop/lease "L2" "P1" "T2" "LL" 1000 "2026-02-01" "2026-02-28")]
+      (is (not (prop/term-overlaps? a b)))))
+  (testing "same-start same-end terms overlap"
+    (let [a (prop/lease "L1" "P1" "T" "LL" 1000 "2026-01-01" "2026-01-31")
+          b (prop/lease "L2" "P1" "T2" "LL" 1000 "2026-01-01" "2026-01-31")]
+      (is (prop/term-overlaps? a b)))))
