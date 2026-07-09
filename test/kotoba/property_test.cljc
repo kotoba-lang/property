@@ -35,4 +35,10 @@
   (testing "same-start same-end terms overlap"
     (let [a (prop/lease "L1" "P1" "T" "LL" 1000 "2026-01-01" "2026-01-31")
           b (prop/lease "L2" "P1" "T2" "LL" 1000 "2026-01-01" "2026-01-31")]
-      (is (prop/term-overlaps? a b)))))
+      (is (prop/term-overlaps? a b))))
+  (testing "identical overlapping dates on DIFFERENT parcels do not overlap -- a
+           lease is only a double-booking conflict against another lease on
+           the same parcel"
+    (let [a (prop/lease "L1" "P1" "TenantA" "LL" 1000 "2026-01-01" "2026-12-31")
+          b (prop/lease "L2" "P2" "TenantB" "LL" 500  "2026-06-01" "2026-06-30")]
+      (is (not (prop/term-overlaps? a b))))))

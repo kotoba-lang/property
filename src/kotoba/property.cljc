@@ -57,12 +57,15 @@
    :lease/end      end})
 
 (defn term-overlaps?
-  "True when two leases' [start,end] terms overlap. Assumes start <= end in
-  the same ordering domain for both leases."
+  "True when two leases are on the same parcel and their [start,end] terms
+  overlap (a double-booking conflict). Leases on different parcels never
+  overlap, regardless of dates. Assumes start <= end in the same ordering
+  domain for both leases."
   [a b]
   (let [as (:lease/start a) ae (:lease/end a)
         bs (:lease/start b) be (:lease/end b)]
-    (and as ae bs be
+    (and (:lease/parcel a) (= (:lease/parcel a) (:lease/parcel b))
+         as ae bs be
          (not (or (neg? (compare ae bs)) (pos? (compare as be)))))))
 
 ;; ---------------------------------------------------------------------------
