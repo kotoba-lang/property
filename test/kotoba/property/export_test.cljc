@@ -7,6 +7,16 @@
   (let [csv (ex/parcels->csv [(prop/parcel "P1" :address "1 Main St")])]
     (is (re-find #"parcel_id,address,area_m2,zoning" csv))
     (is (re-find #"P1,1 Main St" csv))))
+(deftest csv-export-quotes-a-bare-carriage-return
+  ;; RFC 4180 requires quoting a field containing CR, LF, or a comma --
+  ;; \r alone is also a line terminator every standard CSV reader
+  ;; recognizes, but the check here only ever covered \n. Verified
+  ;; against Python's csv module: an unquoted bare \r split the row into
+  ;; two corrupted rows on read-back.
+  (let [ls [(prop/lease "L1" "P1" (str "Jane" (char 13) "Doe")
+              "Landlord Inc" 1000 "2026-01-01" "2027-01-01")]
+        csv (ex/leases->csv ls)]
+    (is (str/includes? csv "\"Jane\rDoe\""))))
 (deftest json-export-escapes-every-c0-control-character
   ;; RFC 8259 requires EVERY control character U+0000-U+001F to be
   ;; escaped, not just \ " and \n -- an operator-supplied lease tenant
