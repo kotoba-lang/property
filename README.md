@@ -78,6 +78,14 @@ clojure -M:collect-hmlr --csv /licensed/CCOD_FULL.csv \
 clojure -M:query --parcel GB-HMLR:TITLE_NUMBER
 ```
 
+NYC-owned parcels require no credentials and can be collected immediately.
+They are kept separate from natural-person ownership data.
+
+```bash
+clojure -M:collect-nyc --limit 500
+clojure -M:query --ownership-parcel US-NY-NYC:BBL:1017900009.0
+```
+
 
 ## Maturity
 

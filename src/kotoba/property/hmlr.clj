@@ -43,7 +43,7 @@
                    :ownership/observed-at observed-at
                    :ownership/licence "HMLR dataset-specific licence"
                    :ownership/disclosure :public}]
-        (when (:ownership/valid? (ownership/validate-claim claim)) claim))))
+        (when (:ownership/valid? (ownership/validate-claim claim)) claim)))))
 
 (defn- read-store [path]
   (if (.exists (io/file path))

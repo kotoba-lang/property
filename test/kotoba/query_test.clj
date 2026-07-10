@@ -38,3 +38,18 @@
               "2026-07-10T00:00:00Z"]}
            (d/q ownership/public-ownership-and-ubo-by-parcel-query
                 db "GB-HMLR:AB123")))))
+
+(deftest public-claim-query-returns-source-identifier
+  (let [db (d/db-with (d/empty-db)
+                      [{:ownership/id "nyc-owned-properties:1017900009.0"
+                        :ownership/parcel "US-NY-NYC:BBL:1017900009.0"
+                        :ownership/holder "City of New York / HPD"
+                        :ownership/source "nyc-owned-properties"
+                        :ownership/observed-at "2026-07-10T00:00:00Z"
+                        :ownership/disclosure :public}])]
+    (is (= #{["nyc-owned-properties:1017900009.0"
+              "City of New York / HPD"
+              "nyc-owned-properties"
+              "2026-07-10T00:00:00Z"]}
+           (d/q ownership/public-claims-by-parcel-query
+                db "US-NY-NYC:BBL:1017900009.0")))))

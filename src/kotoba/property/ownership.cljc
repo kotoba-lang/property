@@ -3,10 +3,11 @@
 
 (def public-claims-by-parcel-query
   "Datalog query usable unchanged by Datomic and DataScript."
-  '[:find ?claim ?holder ?source ?observed-at
+  '[:find ?claim-id ?holder ?source ?observed-at
     :in $ ?parcel
     :where
     [?claim :ownership/parcel ?parcel]
+    [?claim :ownership/id ?claim-id]
     [?claim :ownership/holder ?holder]
     [?claim :ownership/source ?source]
     [?claim :ownership/observed-at ?observed-at]
@@ -32,10 +33,11 @@
 
 (def public-ubo-by-company-query
   "Datalog query usable unchanged by Datomic and DataScript."
-  '[:find ?ubo ?person-name ?control ?source ?observed-at
+  '[:find ?ubo-id ?person-name ?control ?source ?observed-at
     :in $ ?company-id
     :where
     [?ubo :ubo/company-id ?company-id]
+    [?ubo :ubo/id ?ubo-id]
     [?ubo :ubo/person-name ?person-name]
     [?ubo :ubo/control ?control]
     [?ubo :ubo/source ?source]
