@@ -14,6 +14,7 @@
  :ubo/disclosure        {:db/index true}
  :legal-entity/lei      {:db/unique :db.unique/identity}
  :legal-entity/name     {:db/index true}
+ :legal-entity/registered-as {:db/index true}
  :corporate-relation/id {:db/unique :db.unique/identity}
  :corporate-relation/child-lei {:db/index true}
  :corporate-relation/parent-lei {:db/index true}}

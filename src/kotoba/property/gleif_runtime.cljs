@@ -22,6 +22,7 @@
   {:legal-entity/id (:id entity-data)
    :legal-entity/lei (get-in entity-data [:attributes :lei])
    :legal-entity/name (get-in entity-data [:attributes :entity :legalName :name])
+   :legal-entity/registered-as (get-in entity-data [:attributes :entity :registeredAs])
    :legal-entity/jurisdiction (get-in entity-data [:attributes :entity :jurisdiction])
    :legal-entity/source source-id
    :legal-entity/observed-at observed-at})

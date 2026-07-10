@@ -104,6 +104,14 @@ nbb -cp src scripts/collect_gleif.cljs --lei 529900T8BM49AURSDO55
 nbb -cp src scripts/query_corporate_parent.cljs --lei 529900T8BM49AURSDO55
 ```
 
+When a licensed HMLR store and a GLEIF store contain the same UK company
+registration number, join them directly:
+
+```bash
+nbb -cp src scripts/query_property_parent.cljs \
+  --parcel GB-HMLR:TITLE_NUMBER
+```
+
 
 ## Maturity
 
