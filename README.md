@@ -113,6 +113,15 @@ nbb -cp src scripts/collect_gleif_jurisdiction.cljs \
   --jurisdiction US --pages 2 --page-size 100
 ```
 
+Authority coverage is recorded in
+`resources/property/open_data/coverage.edn`. Unlisted jurisdictions default to
+`:unknown`; they are never silently collected.
+
+```bash
+npm run query:coverage
+npm run query:coverage -- --status allow-login-free
+```
+
 When a licensed HMLR store and a GLEIF store contain the same UK company
 registration number, join them directly:
 
