@@ -11,8 +11,13 @@
  {:db/ident :ownership/holder
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
-  :db/index true
+ :db/index true
   :db/doc "Publicly attributable non-natural-person holder label."}
+ {:db/ident :ownership/holder-id
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true
+  :db/doc "Authoritative company identifier for a corporate property owner."}
  {:db/ident :ownership/holder-kind
   :db/valueType :db.type/keyword
   :db/cardinality :db.cardinality/one}

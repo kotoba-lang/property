@@ -1,6 +1,7 @@
 {:ownership/id          {:db/unique :db.unique/identity}
  :ownership/parcel      {:db/index true}
  :ownership/holder      {:db/index true}
+ :ownership/holder-id   {:db/index true}
  :ownership/source      {:db/index true}
  :ownership/observed-at {:db/index true}
  :ownership/disclosure  {:db/index true}

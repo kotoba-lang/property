@@ -42,6 +42,21 @@
     [?ubo :ubo/observed-at ?observed-at]
     [?ubo :ubo/disclosure :public]])
 
+(def public-ownership-and-ubo-by-parcel-query
+  "Datalog query joining a corporate property owner to its public UBOs."
+  '[:find ?owner ?company-id ?person-name ?control ?source ?observed-at
+    :in $ ?parcel
+    :where
+    [?ownership :ownership/parcel ?parcel]
+    [?ownership :ownership/holder ?owner]
+    [?ownership :ownership/holder-id ?company-id]
+    [?ubo :ubo/company-id ?company-id]
+    [?ubo :ubo/person-name ?person-name]
+    [?ubo :ubo/control ?control]
+    [?ubo :ubo/source ?source]
+    [?ubo :ubo/observed-at ?observed-at]
+    [?ubo :ubo/disclosure :public]])
+
 (def required-ubo-keys
   #{:ubo/id :ubo/company-id :ubo/person-id :ubo/person-name :ubo/control
     :ubo/jurisdiction :ubo/source :ubo/observed-at :ubo/disclosure})

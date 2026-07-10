@@ -96,7 +96,7 @@
         api-key (System/getenv "COMPANIES_HOUSE_API_KEY")]
     (when (or (str/blank? api-key) (empty? companies))
       (binding [*out* *err*] (println (usage))
-      (System/exit 2))
+      (System/exit 2)))
     (let [state (reduce (partial collect-company! api-key) (read-store store) companies)]
       (write-store! store state)
       (println (pr-str {:store store

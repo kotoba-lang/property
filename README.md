@@ -69,6 +69,15 @@ clojure -M:query --company 00000006
 The collector writes `var/kotoba-property/gb-ubo.edn`, which is ignored by
 Git. It retains only the reduced UBO fields defined by the schema.
 
+After accepting the relevant HMLR data licence and downloading CCOD or OCOD,
+import only corporate-owner records and join them to PSC by company number:
+
+```bash
+clojure -M:collect-hmlr --csv /licensed/CCOD_FULL.csv \
+  --source hmlr-uk-corporate-property --observed-at 2026-07-10
+clojure -M:query --parcel GB-HMLR:TITLE_NUMBER
+```
+
 
 ## Maturity
 
