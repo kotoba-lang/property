@@ -1,7 +1,9 @@
 (ns collect-gleif
   "Credential-free GLEIF Level 2 direct-parent collector for nbb."
   (:require [cljs.reader :as reader]
+            [kotoba.property.audit-runtime :as audit]
             [kotoba.property.gleif-runtime :as gleif]
+            ["crypto" :as crypto]
             ["fs" :as fs]
             ["path" :as path]))
 
@@ -23,20 +25,23 @@
   (-> (js/fetch url)
       (.then (fn [response]
                (if (.-ok response)
-                 (.json response)
+                 (.text response)
                  (js/Promise.reject (js/Error. (str "GLEIF HTTP " (.-status response)))))))))
 
-(defn- collect-state [state observed-at relation entity]
+(defn- collect-state [state observed-at content-sha256 relation entity]
   (let [relation-record (gleif/normalize-relation observed-at relation)
         entity-record (gleif/normalize-entity observed-at entity)]
-    (assoc state
-           :corporate-relations (assoc (:corporate-relations state)
-                                       (:corporate-relation/id relation-record) relation-record)
+    (let [previous-records (:corporate-relations state)
+          current-records (assoc previous-records (:corporate-relation/id relation-record)
+                                 relation-record)]
+      (assoc state
+           :corporate-relations current-records
            :lei-records (assoc (:lei-records state)
                                (:legal-entity/lei entity-record) entity-record)
            :source-state (assoc (:source-state state) gleif/source-id
-                                {:retrieved-at observed-at
-                                 :endpoint gleif/api-root})) ))
+                                (assoc (audit/source-audit gleif/source-id observed-at content-sha256
+                                                           previous-records current-records)
+                                       :source-audit/endpoint gleif/api-root)) ))))
 
 (defn -main []
   (let [lei (arg-value *command-line-args* "--lei")
@@ -44,23 +49,35 @@
     (when-not lei
       (binding [*out* *err*] (println "Usage: nbb -cp src scripts/collect_gleif.cljs --lei LEI"))
       (js/process.exit 2))
-    (-> (fetch-json (str gleif/api-root "/" lei "/direct-parent-relationship"))
-        (.then (fn [relation-response]
-                 (let [relation (:data (js->clj relation-response :keywordize-keys true))
-                       parent-lei (get-in relation [:attributes :relationship :endNode :id])]
-                   (-> (fetch-json (str gleif/api-root "/" parent-lei))
-                       (.then (fn [entity-response]
+    (let [relation-promise
+          (fetch-json (str gleif/api-root "/" lei "/direct-parent-relationship"))
+          result
+          (.then relation-promise
+                 (fn [relation-body]
+                   (let [relation (:data (js->clj (js/JSON.parse relation-body)
+                                                   :keywordize-keys true))
+                         parent-lei (get-in relation [:attributes :relationship :endNode :id])
+                         entity-promise (fetch-json (str gleif/api-root "/" parent-lei))]
+                     (.then entity-promise
+                            (fn [entity-body]
+                              (let [content-sha256 (-> (.createHash crypto "sha256")
+                                                       (.update (str relation-body "\n" entity-body) "utf8")
+                                                       (.digest "hex"))]
                                 {:relation relation
-                                 :entity (:data (js->clj entity-response :keywordize-keys true))}))))))
-        (.then (fn [{:keys [relation entity]}]
-                 (let [state (collect-state (read-state store)
-                                            (.toISOString (js/Date.)) relation entity)]
-                   (write-state! store state)
-                   (println (pr-str {:store store
-                                     :corporate-relations (count (:corporate-relations state))
-                                     :lei-records (count (:lei-records state))})))))
-        (.catch (fn [error]
-                  (binding [*out* *err*] (println (.-message error)))
-                  (js/process.exit 1))))))
+                                 :entity (:data (js->clj (js/JSON.parse entity-body)
+                                                          :keywordize-keys true))
+                                 :content-sha256 content-sha256}))))))]
+      (.then result
+             (fn [{:keys [relation entity content-sha256]}]
+               (let [state (collect-state (read-state store) (.toISOString (js/Date.))
+                                           content-sha256 relation entity)]
+                 (write-state! store state)
+                 (println (pr-str {:store store
+                                   :corporate-relations (count (:corporate-relations state))
+                                   :lei-records (count (:lei-records state))})))))
+      (.catch result
+              (fn [error]
+                (binding [*out* *err*] (println (.-message error)))
+                (js/process.exit 1))))))
 
 (-main)
