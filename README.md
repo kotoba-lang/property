@@ -104,6 +104,15 @@ nbb -cp src scripts/collect_gleif.cljs --lei 529900T8BM49AURSDO55
 nbb -cp src scripts/query_corporate_parent.cljs --lei 529900T8BM49AURSDO55
 ```
 
+To expand global legal-entity coverage without credentials, collect bounded
+GLEIF Level 1 pages by jurisdiction. Increase `--pages` deliberately because
+jurisdictions can contain hundreds of thousands of records.
+
+```bash
+nbb -cp src scripts/collect_gleif_jurisdiction.cljs \
+  --jurisdiction US --pages 2 --page-size 100
+```
+
 When a licensed HMLR store and a GLEIF store contain the same UK company
 registration number, join them directly:
 
