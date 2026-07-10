@@ -2,6 +2,7 @@
   "Credential-free bounded GLEIF Level 1 jurisdiction collector for nbb."
   (:require [cljs.reader :as reader]
             [kotoba.property.audit-runtime :as audit]
+            [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gleif-runtime :as gleif]
             ["crypto" :as crypto]
             ["fs" :as fs]
@@ -49,6 +50,7 @@
         page-size (js/parseInt (arg-value args "--page-size" "100") 10)
         store (arg-value args "--store" default-store)
         source (str "gleif-level-1:" jurisdiction)]
+    (coverage/assert-collectable! source)
     (-> (fetch-pages jurisdiction 1 page-size pages [] [])
         (.then (fn [{:keys [bodies records]}]
                  (let [observed-at (.toISOString (js/Date.))

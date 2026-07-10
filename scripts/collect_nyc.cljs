@@ -2,6 +2,7 @@
   "Credential-free NYC-owned property collector for nbb."
   (:require [cljs.reader :as reader]
             [kotoba.property.audit-runtime :as audit]
+            [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.nyc-runtime :as nyc]
             ["crypto" :as crypto]
             ["fs" :as fs]
@@ -45,6 +46,7 @@
   (let [args *command-line-args*
         limit (js/parseInt (arg-value args "--limit" "500") 10)
         store (arg-value args "--store" default-store)]
+    (coverage/assert-collectable! nyc/source-id)
     (-> (js/fetch (str nyc/endpoint "?$limit=" limit))
         (.then (fn [response]
                  (if (.-ok response)

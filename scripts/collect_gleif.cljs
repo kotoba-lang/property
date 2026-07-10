@@ -2,6 +2,7 @@
   "Credential-free GLEIF Level 2 direct-parent collector for nbb."
   (:require [cljs.reader :as reader]
             [kotoba.property.audit-runtime :as audit]
+            [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gleif-runtime :as gleif]
             ["crypto" :as crypto]
             ["fs" :as fs]
@@ -46,6 +47,7 @@
 (defn -main []
   (let [lei (arg-value *command-line-args* "--lei")
         store (or (arg-value *command-line-args* "--store") default-store)]
+    (coverage/assert-collectable! gleif/source-id)
     (when-not lei
       (binding [*out* *err*] (println "Usage: nbb -cp src scripts/collect_gleif.cljs --lei LEI"))
       (js/process.exit 2))

@@ -10,6 +10,7 @@
     "collect:gleif": "nbb -cp src scripts/collect_gleif.cljs",
     "collect:gleif-jurisdiction": "nbb -cp src scripts/collect_gleif_jurisdiction.cljs",
     "query:coverage": "nbb -cp src scripts/query_coverage.cljs",
+    "verify:coverage-gate": "nbb -cp src scripts/verify_coverage_gate.cljs",
     "query:parent": "nbb -cp src scripts/query_corporate_parent.cljs",
     "query:audit": "nbb -cp src scripts/query_source_audit.cljs"
   }
