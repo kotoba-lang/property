@@ -12,6 +12,41 @@ conflict-free tenant scheduling.
 No network, no I/O. Amounts are plain numbers in the smallest currency unit.
 Portable `.cljc` across JVM / ClojureScript / SCI / GraalVM.
 
+## Public ownership collection
+
+`resources/property/open_data/` defines a provenance-first EDN interchange
+for publicly attributable land and building ownership claims. It is designed
+for both Datomic and DataScript. The repository does not publish names of
+natural-person owners, private-register data, or data whose upstream licence
+does not permit redistribution.
+
+Each imported claim must identify its property, holder, source, observation
+time, licence, and disclosure class. `:ownership/disclosure` is `:public`
+only when the upstream publisher makes that attribution publicly available.
+Use `:not-published` for parcel data where ownership is not released.
+
+```clojure
+(require '[kotoba.property.ownership :as ownership])
+
+ownership/public-claims-by-parcel-query
+;; Run this Datalog vector unchanged with datomic.api/q or datascript.core/q.
+
+(ownership/validate-claim
+ {:ownership/id "nyc:mappluto:example"
+  :ownership/parcel "nyc:borough-block-lot:1000010001"
+  :ownership/holder "Example public authority"
+  :ownership/holder-kind :public-body
+  :ownership/source "nyc-mappluto"
+  :ownership/observed-at "2026-07-10"
+  :ownership/licence "NYC Open Data Terms of Use"
+  :ownership/disclosure :public})
+;; => {:ownership/valid? true}
+```
+
+`sources.edn` is a reviewed source catalog, not a mirror of the referenced
+datasets. Add a data extract only after confirming the source's publication
+scope, licence, jurisdiction, and refresh date.
+
 
 ## Maturity
 

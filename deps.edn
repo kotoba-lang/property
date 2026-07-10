@@ -1,4 +1,4 @@
-{:paths ["src"]
+{:paths ["src" "resources"]
  :deps {io.github.kotoba-lang/html {:local/root "../html"}
         io.github.kotoba-lang/css  {:local/root "../css"}}
  :aliases

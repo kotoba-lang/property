@@ -1,0 +1,22 @@
+{:catalog/id "kotoba-property-public-ownership-sources"
+ :catalog/version "0.1.0"
+ :catalog/policy {:redistribute-only-when-allowed? true
+                  :natural-person-owners-permitted? false
+                  :provenance-required? true}
+ :sources
+ [{:source/id "nyc-mappluto"
+   :source/jurisdiction "US-NY-NYC"
+   :source/publisher "New York City Department of City Planning"
+   :source/url "https://www.nyc.gov/site/planning/data-maps/open-data/dwn-pluto-mappluto.page"
+   :source/property-coverage :parcel-and-building
+   :source/ownership-availability :publicly-attributed
+   :source/licence "NYC Open Data Terms of Use"
+   :source/review-status :candidate}
+  {:source/id "uk-hmlr-inspire-index-polygons"
+   :source/jurisdiction "GB-ENG-WLS"
+   :source/publisher "HM Land Registry"
+   :source/url "https://use-land-property-data.service.gov.uk/datasets/inspire"
+   :source/property-coverage :parcel
+   :source/ownership-availability :not-published
+   :source/licence "HM Land Registry INSPIRE Index Polygons terms"
+   :source/review-status :candidate}]}

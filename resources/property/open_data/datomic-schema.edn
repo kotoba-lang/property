@@ -1,0 +1,35 @@
+[{:db/ident :ownership/id
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity
+  :db/doc "Stable source-scoped ownership-claim identifier."}
+ {:db/ident :ownership/parcel
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true
+  :db/doc "Jurisdiction-scoped parcel or building identifier."}
+ {:db/ident :ownership/holder
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true
+  :db/doc "Publicly attributable non-natural-person holder label."}
+ {:db/ident :ownership/holder-kind
+  :db/valueType :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :ownership/source
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true}
+ {:db/ident :ownership/observed-at
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true
+  :db/doc "ISO-8601 date or timestamp published by, or retrieved from, source."}
+ {:db/ident :ownership/licence
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :ownership/disclosure
+  :db/valueType :db.type/keyword
+  :db/cardinality :db.cardinality/one
+  :db/index true
+  :db/doc "Must be :public for data distributed by this collection."}]
