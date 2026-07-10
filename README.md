@@ -47,6 +47,19 @@ ownership/public-claims-by-parcel-query
 datasets. Add a data extract only after confirming the source's publication
 scope, licence, jurisdiction, and refresh date.
 
+## UBO and natural-person data
+
+Natural-person names are not property-owner records in this project. They can
+only be ingested as a beneficial-ownership relation to a corporate owner when
+the jurisdiction/source pair is allowlisted in
+`resources/property/open_data/sources.edn`. The initial allowlist is the UK
+Companies House PSC product. It deliberately excludes residential addresses,
+full dates of birth, identity-verification material, and protected records.
+
+The UBO records belong in a governed database or a source-derived local
+snapshot, never in this repository. See `DATA-GOVERNANCE.md` before enabling
+an importer.
+
 
 ## Maturity
 

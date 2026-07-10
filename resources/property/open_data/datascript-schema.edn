@@ -3,4 +3,11 @@
  :ownership/holder      {:db/index true}
  :ownership/source      {:db/index true}
  :ownership/observed-at {:db/index true}
- :ownership/disclosure  {:db/index true}}
+ :ownership/disclosure  {:db/index true}
+ :ubo/id                {:db/unique :db.unique/identity}
+ :ubo/company-id        {:db/index true}
+ :ubo/person-id         {:db/index true}
+ :ubo/person-name       {:db/index true}
+ :ubo/source            {:db/index true}
+ :ubo/observed-at       {:db/index true}
+ :ubo/disclosure        {:db/index true}}

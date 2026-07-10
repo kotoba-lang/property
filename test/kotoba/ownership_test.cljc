@@ -28,3 +28,23 @@
   (is (= :find (first ownership/public-claims-by-parcel-query)))
   (is (some #{'[?claim :ownership/disclosure :public]}
             ownership/public-claims-by-parcel-query)))
+
+(def public-ubo
+  {:ubo/id "companies-house-psc:12345678:abc"
+   :ubo/company-id "12345678"
+   :ubo/person-id "companies-house-psc:abc"
+   :ubo/person-name "Example Person"
+   :ubo/control #{:shares-25-to-50-percent}
+   :ubo/jurisdiction "GB"
+   :ubo/source "companies-house-psc"
+   :ubo/observed-at "2026-07-10"
+   :ubo/disclosure :public})
+
+(deftest validate-ubo-test
+  (is (= {:ubo/valid? true} (ownership/validate-ubo public-ubo)))
+  (is (= :source-not-allowlisted
+         (:ubo/error (ownership/validate-ubo
+                      (assoc public-ubo :ubo/jurisdiction "US")))))
+  (is (= :not-publicly-disclosed
+         (:ubo/error (ownership/validate-ubo
+                      (assoc public-ubo :ubo/disclosure :protected))))))
