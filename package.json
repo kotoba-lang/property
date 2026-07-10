@@ -1,0 +1,13 @@
+{
+  "name": "@kotoba-lang/property-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "datascript": "1.7.8"
+  },
+  "scripts": {
+    "collect:nyc": "nbb -cp src scripts/collect_nyc.cljs",
+    "collect:gleif": "nbb -cp src scripts/collect_gleif.cljs",
+    "query:parent": "nbb -cp src scripts/query_corporate_parent.cljs"
+  }
+}

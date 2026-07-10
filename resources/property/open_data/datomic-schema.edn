@@ -73,5 +73,32 @@
  {:db/ident :ubo/disclosure
   :db/valueType :db.type/keyword
   :db/cardinality :db.cardinality/one
-  :db/index true
-  :db/doc "Must be :public for ingestion."}]
+ :db/index true
+  :db/doc "Must be :public for ingestion."}
+ {:db/ident :legal-entity/lei
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity}
+ {:db/ident :legal-entity/name
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true}
+ {:db/ident :corporate-relation/id
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/identity}
+ {:db/ident :corporate-relation/child-lei
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true}
+ {:db/ident :corporate-relation/parent-lei
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true}
+ {:db/ident :corporate-relation/type
+  :db/valueType :db.type/keyword
+  :db/cardinality :db.cardinality/one}
+ {:db/ident :corporate-relation/observed-at
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/index true}]

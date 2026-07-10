@@ -89,6 +89,21 @@ nbb -cp src scripts/query_owned_property.cljs \
   --parcel US-NY-NYC:BBL:1017900009.0
 ```
 
+Both nbb query commands execute Datalog through the npm DataScript runtime;
+their query strings use explicit namespaced attribute names, preserving the
+same EDN contract used by Datomic/DataScript clients.
+
+## Corporate graph
+
+GLEIF Level 2 is credential-free and provides accounting-consolidation parent
+relations between legal entities. It is not a natural-person UBO registry.
+
+```bash
+npm install
+nbb -cp src scripts/collect_gleif.cljs --lei 529900T8BM49AURSDO55
+nbb -cp src scripts/query_corporate_parent.cljs --lei 529900T8BM49AURSDO55
+```
+
 
 ## Maturity
 
