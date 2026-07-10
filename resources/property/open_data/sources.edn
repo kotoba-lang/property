@@ -21,6 +21,14 @@
    :source/ownership-availability :corporate-only
    :source/licence "Dataset-specific licence acceptance required"
    :source/review-status :candidate}
+  {:source/id "nyc-owned-properties"
+   :source/jurisdiction "US-NY-NYC"
+   :source/publisher "New York City Department of Citywide Administrative Services"
+   :source/url "https://data.cityofnewyork.us/d/ynxg-k94i"
+   :source/property-coverage :parcel-and-building
+   :source/ownership-availability :public-body-only
+   :source/licence "NYC Open Data Terms of Use"
+   :source/review-status :allowlisted-for-public-ingestion}
   {:source/id "nyc-mappluto"
    :source/jurisdiction "US-NY-NYC"
    :source/publisher "New York City Department of City Planning"

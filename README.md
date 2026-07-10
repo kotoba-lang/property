@@ -79,11 +79,14 @@ clojure -M:query --parcel GB-HMLR:TITLE_NUMBER
 ```
 
 NYC-owned parcels require no credentials and can be collected immediately.
-They are kept separate from natural-person ownership data.
+They are kept separate from natural-person ownership data. The preferred
+runtime is `kotoba` contracts -> ClojureScript -> `nbb`; the nbb scripts own
+the capability boundary for network and local-file I/O.
 
 ```bash
-clojure -M:collect-nyc --limit 500
-clojure -M:query --ownership-parcel US-NY-NYC:BBL:1017900009.0
+nbb -cp src scripts/collect_nyc.cljs --limit 500
+nbb -cp src scripts/query_owned_property.cljs \
+  --parcel US-NY-NYC:BBL:1017900009.0
 ```
 
 
