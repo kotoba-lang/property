@@ -60,6 +60,15 @@ The UBO records belong in a governed database or a source-derived local
 snapshot, never in this repository. See `DATA-GOVERNANCE.md` before enabling
 an importer.
 
+```bash
+# Requires a Companies House Public Data API key and a corporate-owner number.
+COMPANIES_HOUSE_API_KEY=... clojure -M:collect --company 00000006
+clojure -M:query --company 00000006
+```
+
+The collector writes `var/kotoba-property/gb-ubo.edn`, which is ignored by
+Git. It retains only the reduced UBO fields defined by the schema.
+
 
 ## Maturity
 
