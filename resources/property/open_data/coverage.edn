@@ -1,0 +1,64 @@
+{:coverage/id "kotoba-property-authority-coverage"
+ :coverage/version "0.1.0"
+ :coverage/default-status :unknown
+ :coverage/statuses #{:allow-login-free :governed-license :search-only :deny :unknown}
+ :coverage/entries
+ [{:authority/id "GLOBAL/GLEIF"
+   :jurisdiction "GLOBAL"
+   :authority "Global Legal Entity Identifier Foundation"
+   :dataset "LEI Level 1 and Level 2"
+   :status :allow-login-free
+   :property-owner-data? false
+   :natural-person-ubo-data? false
+   :url "https://api.gleif.org/api/v1/lei-records"
+   :reviewed-at "2026-07-10"}
+  {:authority/id "US-NY-NYC/NYC-OpenData"
+   :jurisdiction "US-NY-NYC"
+   :authority "New York City Open Data"
+   :dataset "NYC Owned Properties"
+   :status :allow-login-free
+   :property-owner-data? true
+   :owner-scope :public-body-only
+   :natural-person-ubo-data? false
+   :url "https://data.cityofnewyork.us/d/ynxg-k94i"
+   :reviewed-at "2026-07-10"}
+  {:authority/id "GB/Companies-House"
+   :jurisdiction "GB"
+   :authority "Companies House"
+   :dataset "PSC and Register of Overseas Entities"
+   :status :governed-license
+   :property-owner-data? false
+   :natural-person-ubo-data? true
+   :url "https://download.companieshouse.gov.uk/en_pscdata.html"
+   :reviewed-at "2026-07-10"
+   :note "Public source; privacy, correction, suppression and reuse controls required."}
+  {:authority/id "GB-ENG-WLS/HM-Land-Registry"
+   :jurisdiction "GB-ENG-WLS"
+   :authority "HM Land Registry"
+   :dataset "UK and Overseas Companies that own property"
+   :status :governed-license
+   :property-owner-data? true
+   :owner-scope :corporate-only
+   :natural-person-ubo-data? false
+   :url "https://use-land-property-data.service.gov.uk/"
+   :reviewed-at "2026-07-10"}
+  {:authority/id "NZ/LINZ"
+   :jurisdiction "NZ"
+   :authority "Toitū Te Whenua Land Information New Zealand"
+   :dataset "Property ownership and title records"
+   :status :governed-license
+   :property-owner-data? true
+   :natural-person-ubo-data? :possible
+   :url "https://www.linz.govt.nz/products-services/data/types-linz-data/property-ownership-and-boundary-data"
+   :reviewed-at "2026-07-10"
+   :note "Small searches are available; bulk ownership requires a Personal Data licence."}
+  {:authority/id "EU-EEA/UBO-registers"
+   :jurisdiction "EU-EEA"
+   :authority "Member-state beneficial-ownership registers"
+   :dataset "General-public UBO access"
+   :status :deny
+   :property-owner-data? false
+   :natural-person-ubo-data? true
+   :url "https://curia.europa.eu/site/upload/docs/application/pdf/2022-11/cp220188en.pdf"
+   :reviewed-at "2026-07-10"
+   :note "Do not treat general-public access as an unrestricted redistribution licence."}]}
