@@ -53,6 +53,9 @@
                 :corpus/record-count 3391413}
         m (gp/projection-manifest corpus {:jurisdictions ["JP"] :status "ISSUED"} 42)]
     (is (true? (:corpus/projection m)))
+    (testing "stays marked as a manifest line so a reader never loads it as a company"
+      (is (true? (:corpus/manifest m)))
+      (is (true? (:corpus/manifest (gp/projection-manifest {} {} 0)))))
     (is (= 42 (:corpus/record-count m)))
     (is (= ["JP"] (:projection/jurisdictions m)))
     (is (= "ISSUED" (:projection/status m)))

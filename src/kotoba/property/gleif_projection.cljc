@@ -44,6 +44,10 @@
    if it were the whole universe."
   [corpus-manifest {:keys [leis jurisdictions status]} record-count]
   (cond-> (assoc (dissoc corpus-manifest :corpus/record-count)
+                 ;; Set unconditionally, not inherited: a corpus written before
+                 ;; the manifest convention would leave line 1 unmarked, and a
+                 ;; reader would then load the header as if it were a company.
+                 :corpus/manifest true
                  :corpus/projection true
                  :corpus/record-count record-count)
     (seq leis) (assoc :projection/lei-count (count leis))

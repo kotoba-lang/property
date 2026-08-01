@@ -21,9 +21,17 @@
    `--out` default and DATA-GOVERNANCE.md. Commit the *projections* built from
    it by `scripts/project_gleif_corpus.cljs`, not the corpus.
 
+   `--skip`/`--limit` make the ingest shardable. Parsing a row costs ~1.2 ms of
+   ClojureScript and skipping one costs a regex, so N shards over disjoint row
+   ranges finish in ~1/N of the time and concatenate, in order, into the same
+   corpus — worth it on a loaded machine where one process gets a fraction of a
+   core. Only shard 0 writes the manifest line.
+
    Usage:
      nbb scripts/collect_gleif_golden_copy.cljs --zip <path-to-golden-copy.csv.zip>
-     nbb scripts/collect_gleif_golden_copy.cljs --zip <path> --out <corpus.edn> --limit 1000"
+     nbb scripts/collect_gleif_golden_copy.cljs --zip <path> --out <corpus.edn> --limit 1000
+     nbb scripts/collect_gleif_golden_copy.cljs --zip <path> --out <shard-1.edn> \\
+       --skip 850000 --limit 850000 --no-manifest"
   (:require [clojure.string :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gleif-golden-copy :as gc]
@@ -61,6 +69,8 @@
         zip (arg-value args "--zip" nil)
         out (arg-value args "--out" default-out)
         limit (when-let [l (arg-value args "--limit" nil)] (js/parseInt l 10))
+        skip (js/parseInt (arg-value args "--skip" "0") 10)
+        manifest? (not (flag? args "--no-manifest"))
         quiet? (flag? args "--quiet")]
     (when-not zip
       (println "usage: collect_gleif_golden_copy.cljs --zip <golden-copy.csv.zip> [--out <corpus.edn>] [--limit N]")
@@ -83,24 +93,28 @@
                                         :content-sha256 content-sha256
                                         :observed-at observed-at
                                         :source-archive zip})]
-      (.write sink (str (pr-str manifest) "\n"))
+      (when manifest? (.write sink (str (pr-str manifest) "\n")))
       (let [emit!
             (fn [line]
               (let [{:keys [header rows]} @state]
                 (if-not header
                   (swap! state assoc :header
                          (gc/selection (gc/header-index (gc/parse-csv-line line))))
-                  (if (and limit (>= rows limit))
+                  (if (and limit (>= rows (+ skip limit)))
                     (.close rl)
-                    (let [rec (gc/row->record line header)]
+                    ;; A skipped row is counted but never parsed: that is what
+                    ;; makes sharding cheap.
+                    (if (< rows skip)
                       (swap! state update :rows inc)
-                      (if rec
-                        (do (.write sink (str (pr-str rec) "\n"))
-                            (swap! state update :written inc))
-                        (swap! state update :skipped inc))
-                      (when (and (not quiet?)
-                                 (zero? (mod (:rows @state) 250000)))
-                        (println "  ..." (:rows @state) "rows")))))))]
+                      (let [rec (gc/row->record line header)]
+                        (swap! state update :rows inc)
+                        (if rec
+                          (do (.write sink (str (pr-str rec) "\n"))
+                              (swap! state update :written inc))
+                          (swap! state update :skipped inc))
+                        (when (and (not quiet?)
+                                   (zero? (mod (:rows @state) 250000)))
+                          (println "  ..." (:rows @state) "rows"))))))))]
         (.on rl "line"
              (fn [line]
                ;; A quoted field may contain a newline (GLEIF address lines do),
@@ -137,6 +151,7 @@
                                         :content-sha256 content-sha256
                                         :observed-at observed-at
                                         :rows rows
+                                        :skip-rows skip
                                         :written written
                                         :skipped skipped
                                         :bytes (.-size (.statSync fs out))})))))))
