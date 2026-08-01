@@ -10,6 +10,7 @@
   (cond
     (= source "nyc-owned-properties") "US-NY-NYC/NYC-OpenData"
     (= source "gleif-level-2") "GLOBAL/GLEIF"
+    (= source "gleif-golden-copy") "GLOBAL/GLEIF"
     (str/starts-with? source "gleif-level-1:") "GLOBAL/GLEIF"
     (= source "companies-house-psc") "GB/Companies-House"
     (= source "hmlr-uk-corporate-property") "GB-ENG-WLS/HM-Land-Registry"

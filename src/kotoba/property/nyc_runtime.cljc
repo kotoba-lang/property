@@ -9,7 +9,12 @@
   (let [bbl (:bbl record)
         agency (:agency record)]
     (when (and bbl agency)
-      {:ownership/id (str source-id ":" bbl)
+      ;; The id must carry the agency, not just the parcel: NYC files one row
+      ;; per (parcel, occupying agency), and 1000220020.0 is held by both DCA
+      ;; and ELECT. Keying on the BBL alone made those two claims the same
+      ;; entity, so the collector's dedupe-by-id kept whichever arrived last
+      ;; and silently dropped 391 of the 2,088 real claims.
+      {:ownership/id (str source-id ":" bbl ":" agency)
        :ownership/parcel (str "US-NY-NYC:BBL:" bbl)
        :ownership/holder (str "City of New York / " agency)
        :ownership/holder-id (str "US-NY-NYC:agency:" agency)

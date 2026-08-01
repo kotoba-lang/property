@@ -11,7 +11,14 @@
    :property-owner-data? false
    :natural-person-ubo-data? false
    :url "https://api.gleif.org/api/v1/lei-records"
-   :reviewed-at "2026-07-10"}
+   :bulk-url "https://goldencopy.gleif.org/api/v2/golden-copies/publishes"
+   :bulk-licence "CC0 1.0"
+   :reviewed-at "2026-08-01"
+   :note "Two endpoints of one authority: the paginated API for lookups, and the
+          daily Golden Copy full file for the whole universe (3,391,413 records
+          on 2026-08-01). Same publisher, same CC0 terms, no account. Corporate
+          identity only -- no natural-person data, so DATA-GOVERNANCE.md's UBO
+          restrictions do not apply to it."}
   {:authority/id "US-NY-NYC/NYC-OpenData"
    :jurisdiction "US-NY-NYC"
    :authority "New York City Open Data"

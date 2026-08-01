@@ -113,6 +113,62 @@ nbb -cp src scripts/collect_gleif_jurisdiction.cljs \
   --jurisdiction US --pages 2 --page-size 100
 ```
 
+## The whole LEI universe (Golden Copy)
+
+The paginated API above is a lookup path: at 200 records per request the full
+LEI universe is >16,000 requests. GLEIF publishes the same data daily as a
+Golden Copy full file under the same CC0 terms, which is the supported way to
+obtain all of it — 3,391,413 legal entities in the 2026-08-01 publish.
+
+```bash
+# 1. fetch the publish index, download the CSV archive (~474 MB)
+curl -s 'https://goldencopy.gleif.org/api/v2/golden-copies/publishes?format=json' \
+  | jq -r '.data[0].lei2.full_file.csv.url'
+curl -L -o ~/.cache/gleif/lei2-golden-copy.csv.zip '<url from above>'
+
+# 2. stream it into an EDN-lines corpus (line 1 is a provenance manifest)
+nbb -cp src scripts/collect_gleif_golden_copy.cljs \
+  --zip ~/.cache/gleif/lei2-golden-copy.csv.zip \
+  --out ~/.cache/gleif/gleif-lei-corpus.edn
+
+# 3. ask the corpus universe-scale questions (filters and counts, no joins)
+nbb -cp src scripts/query_gleif_corpus.cljs --corpus ~/.cache/gleif/gleif-lei-corpus.edn \
+  --group-by company/jurisdiction --top 20
+
+# 4. project the slice you want to join into the workspace query plane
+nbb -cp src scripts/project_gleif_corpus.cljs --corpus ~/.cache/gleif/gleif-lei-corpus.edn \
+  --jurisdiction JP --status ISSUED --out data/gleif-lei-jp.datoms.edn
+```
+
+Neither the archive nor the corpus belongs in Git (~474 MB and ~1.2 GB). What
+is committed is `data/*.datoms.edn`: bounded projections, each carrying the
+publish id and source hash it came from, small enough to load into the
+workspace query plane and join against financial, ToS and property data on
+`:company/lei`.
+
+**A projection is a join boundary, and it is the only one.** An LEI that is
+not in a committed projection cannot be joined in Datalog — it is reachable
+only by scanning the corpus, which cannot join. Widen the join surface by
+widening a projection, never by adding a second store. The plane's measured
+cost is why the whole corpus is not loaded: 200k entities take 85 s and
+614 MB, 600k take 290 s and 1.2 GB, so 3.4M would be ~30 min and ~6 GB on
+every query.
+
+## `var/` and `data/`
+
+- `var/` — a collector's working store, rewritten in place on each refresh,
+  Git-ignored. A cache, not a publication.
+- `data/` — committed projections in EDN-lines form, one record per line,
+  readable without holding the file in memory. Only extracts that pass the
+  publication review in `DATA-GOVERNANCE.md` go here: today public-body
+  property claims and corporate identity records, neither of which contains
+  natural-person data.
+
+```bash
+nbb -cp src scripts/collect_nyc.cljs --limit 5000
+nbb -cp src scripts/export_ownership_datoms.cljs   # var/ -> data/
+```
+
 Authority coverage is recorded in
 `resources/property/open_data/coverage.edn`. Unlisted jurisdictions default to
 `:unknown`; they are never silently collected.

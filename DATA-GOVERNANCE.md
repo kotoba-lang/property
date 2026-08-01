@@ -29,6 +29,26 @@ ownership information under the EU AML rules. Do not treat national register
 pages as a reusable general-public UBO feed without a jurisdiction-specific
 review.
 
+## What may be committed to `data/`
+
+`var/` is a Git-ignored collector cache. `data/` holds committed projections
+that other systems load. An extract may move from `var/` to `data/` only when
+all of the following hold, and the ADR that authorised it says so:
+
+- the authority entry in `coverage.edn` is `:allow-login-free`;
+- the records contain no natural-person data (a public body or a legal entity
+  is not a natural person);
+- the upstream licence permits redistribution — CC0 for GLEIF, the NYC Open
+  Data Terms of Use for NYC-owned parcels;
+- every record keeps its source, observation time, licence and disclosure
+  class, and the file's manifest line keeps the publish id and source hash.
+
+Reviewed and permitted as of 2026-08-01: GLEIF LEI records (corporate identity,
+CC0) and NYC-owned property claims (public-body holders). Everything else stays
+in `var/` or in a governed database. Companies House PSC and HM Land Registry
+CCOD/OCOD extracts are **not** permitted in `data/` — they are licensed or
+person-adjacent.
+
 ## Required controls
 
 - Preserve source URL, source record identifier, retrieval time, and licence.
