@@ -75,6 +75,41 @@
     (is (not (gc/record-start? "Chiyoda-ku\",\"Tokyo\",\"JP\"")))
     (is (not (gc/record-start? "\"001GPB6A9XPE8XJICC1\",")))))
 
+(deftest api-and-bulk-paths-produce-the-same-record
+  ;; A projection may be built from the Golden Copy or from the API. If the two
+  ;; disagreed on a single attribute -- jurisdiction spelled differently, a
+  ;; blank kept rather than dropped -- the same company would answer a query
+  ;; two ways depending on which path filled it.
+  (let [from-bulk (gc/row->record
+                   "HWUPKR0MPOU8FGXBT394,Apple Inc.,Glendale,US-CA,US,US-CA,GENERAL,ACTIVE,H1UM,RA000598,806592,ISSUED,2026-03-03T16:34:33Z"
+                   sel)
+        from-api (gc/api-record->record
+                  {:attributes
+                   {:lei "HWUPKR0MPOU8FGXBT394"
+                    :entity {:legalName {:name "Apple Inc." :language "en"}
+                             :legalAddress {:city "Glendale" :region "US-CA" :country "US"}
+                             :jurisdiction "US-CA"
+                             :category "GENERAL"
+                             :status "ACTIVE"
+                             :legalForm {:id "H1UM" :other nil}
+                             :registeredAt {:id "RA000598" :other nil}
+                             :registeredAs "806592"}
+                    :registration {:status "ISSUED"
+                                   :lastUpdateDate "2026-03-03T16:34:33Z"}}})]
+    (is (= from-bulk from-api))))
+
+(deftest api-record-drops-blanks-and-rejects-a-missing-lei
+  (is (nil? (gc/api-record->record {:attributes {:entity {:legalName {:name "NO LEI"}}}})))
+  (let [r (gc/api-record->record
+           {:attributes {:lei "549300ABCDEFGHIJ1234"
+                         :entity {:legalName {:name "SOMECO"}
+                                  :legalAddress {:city nil :region "" :country "DE"}
+                                  :jurisdiction "DE"}
+                         :registration {:status "ISSUED"}}})]
+    (is (= "DE" (:company/country r)))
+    (is (not (contains? r :company/city)))
+    (is (not (contains? r :company/region)))))
+
 (deftest publish-id-strips-the-file-suffix
   (is (= "20260801-0800-gleif-goldencopy-lei2"
          (gc/publish-id "20260801-0800-gleif-goldencopy-lei2-golden-copy.csv"))))

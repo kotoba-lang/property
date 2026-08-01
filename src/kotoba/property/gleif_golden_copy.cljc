@@ -214,6 +214,41 @@
   (when entry-name
     (str/replace (str/replace entry-name #"\.csv$" "") #"-golden-copy$" "")))
 
+(def api-source-id
+  "The paginated API, used to fill a *bounded* LEI allowlist. Distinct from the
+   Golden Copy source id so the two never overwrite each other's audit rows."
+  "gleif-api-by-lei")
+
+(defn api-record->record
+  "One `api.gleif.org/api/v1/lei-records` datum -> the same portable company
+   entity `row->record` produces from a Golden Copy row.
+
+   Both paths must agree exactly, because a projection built from either has to
+   be interchangeable on the query plane — a company whose jurisdiction is
+   spelled one way from the bulk file and another way from the API would split
+   into two answers to the same question."
+  [datum]
+  (let [attrs (:attributes datum)
+        entity (:entity attrs)
+        addr (:legalAddress entity)
+        reg (:registration attrs)
+        lei (:lei attrs)
+        put (fn [m k v] (if (str/blank? v) m (assoc m k v)))]
+    (when-not (str/blank? lei)
+      (-> {:company/lei lei}
+          (put :company/legal-name (get-in entity [:legalName :name]))
+          (put :company/jurisdiction (:jurisdiction entity))
+          (put :company/country (:country addr))
+          (put :company/city (:city addr))
+          (put :company/region (:region addr))
+          (put :company/entity-category (:category entity))
+          (put :company/entity-status (:status entity))
+          (put :company/legal-form (get-in entity [:legalForm :id]))
+          (put :company/registration-authority (get-in entity [:registeredAt :id]))
+          (put :company/registration-no (:registeredAs entity))
+          (put :company/lei-registration-status (:status reg))
+          (put :company/lei-last-update (:lastUpdateDate reg))))))
+
 (defn corpus-manifest
   "Line 1 of a corpus file: the provenance every record in it shares."
   [{:keys [publish content-sha256 observed-at source-archive record-count]}]
