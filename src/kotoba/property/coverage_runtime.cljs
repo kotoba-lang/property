@@ -11,6 +11,7 @@
     (= source "nyc-owned-properties") "US-NY-NYC/NYC-OpenData"
     (= source "gleif-level-2") "GLOBAL/GLEIF"
     (= source "gleif-golden-copy") "GLOBAL/GLEIF"
+    (= source "gleif-rr-golden-copy") "GLOBAL/GLEIF"
     (= source "gleif-api-by-lei") "GLOBAL/GLEIF"
     (str/starts-with? source "gleif-level-1:") "GLOBAL/GLEIF"
     (= source "companies-house-psc") "GB/Companies-House"
