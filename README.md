@@ -154,6 +154,59 @@ cost is why the whole corpus is not loaded: 200k entities take 85 s and
 614 MB, 600k take 290 s and 1.2 GB, so 3.4M would be ~30 min and ~6 GB on
 every query.
 
+## Who owns whom (Level 2 / RR)
+
+Level 1 says who a legal entity is. It carries no edge, so no Level 1
+projection at any size can answer "who ultimately controls this counterparty".
+That answer is in the RR file, published daily beside LEI2 under the same CC0
+terms — 483,263 relationships in the 2026-08-03 publish, two orders of
+magnitude smaller than the entity universe and therefore tractable whole.
+
+```bash
+# 1. download the RR archive (~24 MB) from the same publish index
+curl -s 'https://goldencopy.gleif.org/api/v2/golden-copies/publishes?format=json' \
+  | jq -r '.data[0].rr.full_file.csv.url'
+curl -L -o ~/.cache/gleif/rr-golden-copy.csv.zip '<url from above>'
+
+# 2. stream it into an EDN-lines corpus (~5 min, 181 MB)
+nbb -cp src scripts/collect_gleif_rr_golden_copy.cljs \
+  --zip ~/.cache/gleif/rr-golden-copy.csv.zip \
+  --out ~/.cache/gleif/gleif-rr-corpus.edn
+
+# 3. project the edges that touch LEIs the query plane already knows
+nbb -cp src scripts/project_gleif_rr_corpus.cljs \
+  --corpus ~/.cache/gleif/gleif-rr-corpus.edn \
+  --lei-file /tmp/plane-leis.txt \
+  --out data/gleif-relationship-joined.datoms.edn
+```
+
+`--lei-file` matches **either** end of the edge, because knowing the child
+answers "who owns this?" and knowing the parent answers "what does this own?".
+Matching only the child would silently drop every subsidiary of a company the
+plane already holds.
+
+Relationship types in the 2026-08-03 publish:
+
+| Type | Count |
+| --- | --- |
+| `IS_FUND-MANAGED_BY` | 148,759 |
+| `IS_ULTIMATELY_CONSOLIDATED_BY` | 132,241 |
+| `IS_DIRECTLY_CONSOLIDATED_BY` | 126,087 |
+| `IS_SUBFUND_OF` | 72,849 |
+| `IS_INTERNATIONAL_BRANCH_OF` | 1,940 |
+| `IS_FEEDER_TO` | 1,387 |
+
+**Every edge keeps its evidence tier.** `:corporate-relation/validation` is
+GLEIF's own: `FULLY_CORROBORATED` (327,207) means the managing LOU checked the
+claim against a source; `ENTITY_SUPPLIED_ONLY` (139,111) means the company
+asserted its own parent and nobody verified it; `PARTIALLY_CORROBORATED` is the
+remaining 16,945. Do not present a self-declared edge as a verified one — 29%
+of this file is self-declaration, and a consumer that flattens the distinction
+is reporting a guess as a fact.
+
+Ownership percentage (`:corporate-relation/quantifier-amount`) is present on
+51,664 of 483,263 edges. Its absence means unknown, never zero.
+
 ## `var/` and `data/`
 
 - `var/` — a collector's working store, rewritten in place on each refresh,

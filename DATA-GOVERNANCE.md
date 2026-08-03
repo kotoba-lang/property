@@ -49,6 +49,27 @@ in `var/` or in a governed database. Companies House PSC and HM Land Registry
 CCOD/OCOD extracts are **not** permitted in `data/` — they are licensed or
 person-adjacent.
 
+Added 2026-08-03 (ADR-2608031900): **GLEIF Level 2 relationship records**
+(`data/gleif-relationship-*.datoms.edn`). Both ends of every edge are LEIs —
+that is, legal entities — so the file contains no natural-person data at all.
+Same CC0 publish, same manifest contract (publish id + source hash).
+
+This is deliberately **not** the UBO feed the section above declines to build.
+GLEIF Level 2 records accounting-consolidation and fund-management
+relationships *between legal entities*, self-published by those entities to
+their managing LOU under CC0. It never names a natural person, so the CJEU
+ruling on public access to beneficial-ownership registers does not reach it,
+and neither does the Companies House PSC restriction. If a future ingest tries
+to resolve a chain of Level 2 edges down to the individuals at the top, that is
+a different dataset under a different review — it does not inherit this one.
+
+Every relationship record keeps `:corporate-relation/validation`, GLEIF's own
+evidence tier for the edge. `ENTITY_SUPPLIED_ONLY` means the company asserted
+its own parent and no one corroborated it; on the 20260803 publish that is
+139,111 of 483,263 edges. Consumers must not present a self-declared edge as a
+verified one — the same asymmetry the jurisdiction catalogs elsewhere in this
+workspace enforce, for the same reason.
+
 ## Required controls
 
 - Preserve source URL, source record identifier, retrieval time, and licence.
