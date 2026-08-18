@@ -72,6 +72,29 @@
             without one would be a company name with nothing attached"
     (is (empty? (kk/parse-section "第 5 期 決 算 公 告\n令和８年８月18日\n株式会社なにか\n" "2026-08-18")))))
 
-(deftest split-blocks-tolerates-the-spacing-pdftotext-produces
-  (is (= 2 (count (kk/split-blocks section))))
-  (is (= [47 71] (mapv :period (kk/split-blocks section)))))
+(deftest split-blocks-anchors-on-the-balance-sheet-not-the-headline
+  (testing "one block per balance sheet — 号外第184号 has 154 headlines and 185
+            balance sheets, so anchoring on the headline loses whole notices"
+    (is (= 2 (count (kk/split-blocks section)))))
+  (is (= [47 71] (mapv :period (kk/split-blocks section))))
+  (testing "the figures come from the text AFTER the anchor: reading 資本金 from
+            the head window takes the PREVIOUS notice's capital"
+    (let [recs (vec (kk/parse-section section "2026-08-18"))]
+      (is (= "30000000" (:company/capital-stock-yen (first recs))))
+      (is (= "100000000" (:company/capital-stock-yen (second recs)))))))
+
+(deftest kanji-numerals-parse
+  (is (= 31 (kk/kanji->int "三十一")))
+  (is (= 8 (kk/kanji->int "八")))
+  (is (= 20 (kk/kanji->int "二十")))
+  (is (= 100 (kk/kanji->int "百")))
+  (testing "a vertical-set notice's date reads the same as an Arabic one — 52 of
+            one issue's dates are written this way"
+    (is (= {:year 2026 :month 3 :day 31} (kk/wareki->date "令和八年三月三十一日現在")))))
+
+(deftest forms-beyond-the-four-company-types
+  (testing "一般社団法人 and friends file 決算公告 too, and each form a pattern
+            misses is a whole notice lost"
+    (let [t (str "一般社団法人日本なんとか協会\n"
+                 "貸借対照表の要旨(令和８年３月31日現在)\n資 本 金 1,000\n")]
+      (is (= 1 (count (kk/parse-section t "2026-08-18")))))))

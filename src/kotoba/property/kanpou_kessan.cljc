@@ -48,6 +48,30 @@
     #?(:clj (Long/parseLong (str s))
        :cljs (js/parseInt (str s) 10))))
 
+(def ^:private kanji-digits
+  {"〇" 0 "零" 0 "一" 1 "二" 2 "三" 3 "四" 4 "五" 5 "六" 6 "七" 7 "八" 8 "九" 9})
+
+(defn kanji->int
+  "「三十一」-> 31, 「八」-> 8, 「元」-> 1. Only the range a date or a period
+   number needs (< 1000), which is all 官報 uses in these positions.
+
+   Measured: 52 of the dates in one issue's 決算公告 section are written this way
+   — a parser that only reads Arabic numerals silently treats every 縦書き notice
+   as unparseable."
+  [s]
+  (when (and s (re-matches #"[〇零一二三四五六七八九十百元]+" (str s)))
+    (if (= "元" s)
+      1
+      (let [chars (vec (str s))]
+        (loop [i 0 total 0 current 0]
+          (if (>= i (count chars))
+            (+ total current)
+            (let [c (str (nth chars i))]
+              (cond
+                (= c "百") (recur (inc i) (+ total (* 100 (max 1 current))) 0)
+                (= c "十") (recur (inc i) (+ total (* 10 (max 1 current))) 0)
+                :else (recur (inc i) total (+ (* 10 current) (get kanji-digits c 0)))))))))))
+
 (defn normalize-digits [s]
   (when s (reduce-kv (fn [acc z a] (str/replace acc z a)) (str s) fullwidth-digits)))
 
@@ -56,17 +80,18 @@
   {"令和" 2018 "平成" 1988 "昭和" 1925})
 
 (defn wareki->date
-  "「令和８年６月20日現在」-> {:year 2026 :month 6 :day 20}, or nil.
+  "「令和８年６月20日現在」/「令和八年三月三十一日現在」 -> {:year :month :day}.
 
-   `元年` is written as 元, not 1, and a 決算日 in the first year of an era is
-   exactly the kind of row that would otherwise parse as year 0."
+   Both numeral systems occur in the same issue (縦書き notices use kanji), and
+   元年 is written 元 rather than 1 — a year that would otherwise parse as 0."
   [s]
-  (when-let [m (re-find #"(令和|平成|昭和)\s*(元|[0-9０-９]{1,2})\s*年\s*([0-9０-９]{1,2})\s*月\s*([0-9０-９]{1,2})\s*日"
+  (when-let [m (re-find #"(令和|平成|昭和)\s*(元|[0-9０-９]{1,2}|[〇零一二三四五六七八九十]{1,3})\s*年\s*([0-9０-９]{1,2}|[〇零一二三四五六七八九十]{1,3})\s*月\s*([0-9０-９]{1,2}|[〇零一二三四五六七八九十]{1,4})\s*日"
                         (str s))]
     (let [[_ era y mo d] m
-          y (if (= "元" y) 1 (parse-int (normalize-digits y)))
-          mo (parse-int (normalize-digits mo))
-          d (parse-int (normalize-digits d))]
+          num (fn [x] (or (parse-int (normalize-digits x)) (kanji->int x)))
+          y (if (= "元" y) 1 (num y))
+          mo (num mo)
+          d (num d)]
       (when (and (get era-base era) y mo d (<= 1 mo 12) (<= 1 d 31))
         {:year (+ (get era-base era) y) :month mo :day d}))))
 
@@ -79,15 +104,11 @@
   ;; so every character between the digits and 告 has to tolerate whitespace.
   #"第\s*([0-9０-９]+)\s*期\s*決\s*算\s*公\s*告")
 
-(def ^:private corporate-form-re
-  ;; 前株 and 後株 are both ordinary: 株式会社本田 and トヨタＬ＆Ｆ福島株式会社
-  ;; are the same kind of name with the form at opposite ends, and a pattern
-  ;; anchored to the end silently drops every 前株 company — measured, that was
-  ;; 130 of 153 blocks in one day's issue.
-  #"(株式会社|有限会社|合同会社|合名会社|合資会社|相互会社|信用金庫|信用組合|協同組合|農business)")
-
 (def ^:private form-token-re
-  #"(株式会社|有限会社|合同会社|合名会社|合資会社|相互会社|信用金庫|信用組合|協同組合)")
+  ;; Every legal form that files a 決算公告, not just the four company types.
+  ;; Measured in one issue: 一般社団法人・公益財団法人・社会福祉法人・公益信託 all
+  ;; appear, and each one a pattern misses is a whole notice lost.
+  #"(株式会社|有限会社|合同会社|合名会社|合資会社|相互会社|信用金庫|信用組合|labour|一般社団法人|一般財団法人|公益社団法人|公益財団法人|社会福祉法人|学校法人|医療法人|宗教法人|特定非営利活動法人|協同組合|農業協同組合|生活協同組合|公益信託|企業年金基金|健康保険組合)")
 
 (def ^:private representative-re #"代表|理事長|組合長|会長|社長")
 
@@ -98,22 +119,65 @@
   ;; The two-column layout interleaves running heads into the text stream.
   #"^(官|報|火曜日|月曜日|水曜日|木曜日|金曜日|土曜日|日曜日|\(号外第.*|令和\s+年.*|\s*)$")
 
-(def ^:private header-split-re
-  ;; The same pattern with no capture group. `clojure.string/split` on a regex
-  ;; WITH a group keeps the group in the output under ClojureScript and drops it
-  ;; under Clojure — measured here: identical code returned 153 blocks in nbb
-  ;; and 0 on the JVM. So the split and the group live in separate patterns.
-  #"第\s*(?:[0-9０-９]+)\s*期\s*決\s*算\s*公\s*告")
+(def ^:private anchor-re
+  ;; The parenthesised date on the balance sheet — or the property list, for a
+  ;; trust — is the anchor, NOT the headline.
+  ;;
+  ;; Measured on 号外第184号: 154 headlines but 185 balance sheets, because a
+  ;; notice's headline is not always 「第N期決算公告」. Splitting on the headline
+  ;; therefore loses whole notices before any field is read, and the loss is
+  ;; invisible — every remaining notice parses fine.
+  ;; The date can sit a line break away from the heading, so the gap tolerates
+  ;; whitespace rather than requiring the paren to be adjacent.
+  #"(?:貸借対照表の要旨|貸借対照表|財産目録)[\s\S]{0,12}?[（(]([^）)]{6,40})[）)]")
+
+(def ^:private period-re #"第\s*([0-9０-９]+|[〇零一二三四五六七八九十]{1,4})\s*期")
+
+(defn- anchor-indexes
+  "Start offsets of every anchor in the text, in order. Portable: `re-seq` gives
+   the matches but not where they are, so the scan walks the string."
+  [text]
+  (loop [from 0 acc []]
+    (let [rest-text (subs text from)
+          m (re-find anchor-re rest-text)]
+      (if-not m
+        acc
+        (let [whole (first m)
+              at (+ from (str/index-of rest-text whole))]
+          (recur (+ at (count whole)) (conj acc {:at at :date-text (second m)})))))))
 
 (defn split-blocks
-  "Whole-section text -> [{:period n :text s}], one per 決算公告 headline."
+  "Whole-section text -> one block per notice, anchored on the balance-sheet
+   date.
+
+   Two windows, and they are not interchangeable: `:head` is the run BEFORE the
+   anchor, where the name, address and period sit, and `:body` is the run AFTER
+   it, where the table figures do. Reading 資本金 out of `:head` takes the
+   PREVIOUS notice's capital — measured: 株式会社本田 came out with トヨタＬ＆Ｆ
+   福島's 30,000千円, a wrong number that looks entirely valid."
   [text]
-  (let [periods (map second (re-seq header-re text))
-        bodies (rest (str/split text header-split-re))]
-    (->> (map vector periods bodies)
-         (keep (fn [[period body]]
-                 (when-let [n (parse-int (normalize-digits period))]
-                   {:period n :text body}))))))
+  (let [anchors (vec (anchor-indexes text))]
+    (map-indexed (fn [i {:keys [at date-text]}]
+                   (let [prev-end (if (zero? i) 0 (:at (nth anchors (dec i))))
+                         next-at (if (< (inc i) (count anchors))
+                                   (:at (nth anchors (inc i)))
+                                   (count text))
+                         head (subs text (max prev-end (- at 900)) at)
+                         body (subs text at (min next-at (+ at 1200)))]
+                     {:text head
+                      :body body
+                      :date-text date-text
+                      ;; The LAST 第N期 before the anchor, not the first: the
+                      ;; two-column layout puts the neighbouring notice's period
+                      ;; earlier in the same window, and taking the first one
+                      ;; attaches 株式会社本田's balance sheet to 第43期 instead
+                      ;; of 第71期 — again a wrong field that looks valid.
+                      :period (let [ms (re-seq period-re head)]
+                                (when (seq ms)
+                                  (let [v (second (last ms))]
+                                    (or (parse-int (normalize-digits v))
+                                        (kanji->int v)))))}))
+                 anchors)))
 
 (defn- clean-lines [text]
   (->> (str/split-lines text)
@@ -121,38 +185,29 @@
        (remove #(re-matches page-furniture-re %))))
 
 (defn block->record
-  "One block -> a company record, or nil when the two fields that make it worth
-   keeping — the company name and the balance-sheet date — are not both there."
-  [{:keys [period text]} published-at]
+  "One block -> a company record, or nil without both a name and a date."
+  [{:keys [period text body date-text]} published-at]
   (let [lines (vec (clean-lines text))
-        bs-idx (or (first (keep-indexed (fn [i l] (when (re-find #"貸借対照表の要旨" l) i)) lines))
-                   (count lines))
-        head (subvec lines 0 (min bs-idx (count lines)))
-        ;; The name is the last form-bearing line before the balance sheet that
-        ;; is not the representative's line; the address is the line before it.
         name-idx (last (keep-indexed (fn [i l]
                                        (when (and (re-find form-token-re l)
                                                   (not (re-find representative-re l))
                                                   (<= (count l) 40))
                                          i))
-                                     head))
-        name (when name-idx (nth head name-idx))
+                                     lines))
+        name (when name-idx (nth lines name-idx))
         address (when (and name-idx (pos? name-idx))
-                  (let [a (nth head (dec name-idx))]
+                  (let [a (nth lines (dec name-idx))]
                     (when (and (re-find address-re a) (>= (count a) 5)) a)))
-        bs-date (some->> text
-                         (re-find #"貸借対照表の要旨\s*[（(]([^）)]*)[）)]")
-                         second
-                         wareki->date)
-        capital (some-> (re-find #"資\s*本\s*金\s*([\d,]+)" text) second (str/replace "," ""))]
+        bs-date (wareki->date date-text)
+        capital (some-> (re-find #"資\s*本\s*金\s*([\d,]+)" (str body)) second (str/replace "," ""))]
     (when (and name bs-date)
       (cond-> {:source/dataset dataset
                :company/legal-name name
-               :kessan/period period
                ;; The whole point of the dataset: the same attribute gBizINFO
                ;; fills for listed companies, filled here for unlisted ones.
                :company/fiscal-year-end-month (:month bs-date)
                :company/fiscal-year-end (iso-date bs-date)}
+        period (assoc :kessan/period period)
         address (assoc :company/address address)
         published-at (assoc :kessan/published-at published-at)
         ;; 千円単位で刷られるので、そのまま円として読ませない。
