@@ -242,6 +242,22 @@ pay for them again:
   names come from the JSON publish of the same records — the only artifact the
   authority ships that states the order unambiguously.
 
+## Which subsidies exist (jGrants)
+
+```bash
+nbb -cp src scripts/collect_jgrants.cljs --out <jp-go-digital-jgrants>/data/jgrants-catalog.datoms.edn
+```
+
+デジタル庁's public API, no key. Measured 2026-08-18: 18 keywords, **3,751
+programmes**, **308 open**, details fetched for the open ones only.
+
+**It is the 公募 side and nothing else.** No `:company/houjin-bangou`, no
+`:company/lei` — so "has this counterparty ever received a subsidy" is *not*
+answerable from it. That answer lives in per-programme 採択者一覧 spreadsheets,
+which are not ingested. Coverage is a union of keyword queries because the API
+requires a 2+ character keyword and has no enumeration (an empty one is HTTP
+400), so the keyword set is recorded in the artifact.
+
 ## Who owns whom (Level 2 / RR)
 
 Level 1 says who a legal entity is. It carries no edge, so no Level 1

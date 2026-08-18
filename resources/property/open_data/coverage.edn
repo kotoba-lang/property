@@ -64,6 +64,24 @@
           never loaded onto the shared query plane. That split is enforced by
           `invoice-zenken/projectable?`, not only by this note. Monthly publish,
           one GET per split, no account."}
+  {:authority/id "JP/Digital-Agency-jGrants"
+   :jurisdiction "JP"
+   :authority "デジタル庁 (Digital Agency)"
+   :dataset "jGrants 補助金公募情報 (public subsidy calls)"
+   :status :allow-login-free
+   :property-owner-data? false
+   :natural-person-ubo-data? false
+   :url "https://www.jgrants-portal.go.jp/"
+   :bulk-url "https://api.jgrants-portal.go.jp/exp/v1/public/subsidies"
+   :bulk-licence "公共データ利用規約（第1.0版）"
+   :attribution "出典：jGrants（デジタル庁）https://api.jgrants-portal.go.jp/ を加工して作成"
+   :reviewed-at "2026-08-18"
+   :note "No key, no account, and no enumeration: a 2+ character `keyword` is
+          required (an empty one is HTTP 400), so coverage is a union of keyword
+          queries and the catalogue records which keywords produced it. This is
+          the 公募 side only -- which programmes exist. It carries no 交付実績 and
+          no 法人番号, so it does NOT answer whether a given company received a
+          subsidy; that lives in per-programme 採択者一覧 spreadsheets."}
   {:authority/id "US-NY-NYC/NYC-OpenData"
    :jurisdiction "US-NY-NYC"
    :authority "New York City Open Data"
