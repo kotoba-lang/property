@@ -314,6 +314,41 @@ Three constraints, all load-bearing:
 Representative directors' names appear in every notice and are dropped on the
 way in, for the same reason `gbizinfo/basic-record` drops them.
 
+## Who won which government contract (官報 政府調達版)
+
+gBizINFO aggregates 調達 from ministry publications; the 落札者等の公示 in 官報's
+政府調達版 is the **primary** notice the buyer itself published, so reading it
+removes that dependency.
+
+```bash
+nbb -cp src scripts/collect_kanpou_chotatsu.cljs --back 30 --out <repo>/data/kanpou-chotatsu.datoms.edn
+```
+
+Measured 2026-08-18, 30 days / 20 procurement issues: **673 awards, ¥289.4bn
+total, largest ¥51.1bn**, 365 linked to a 法人番号. Records use the **same
+`:grant/*` attributes as gBizINFO's procurement rows**, so "what has the state
+given this company" is one query across both, and `:source/dataset` says which
+notice it came from.
+
+Only WTO-agreement-scale contracts appear in 官報 — **absence is not evidence of
+no award**, it is evidence of a smaller one.
+
+Three things this parser had to learn, each of which produced valid-looking
+garbage first:
+
+- **The field numbers are PUA characters.** The 国立印刷局 PDFs use the
+  `Adobe-Npb1` CID collection, so digits, commas, hyphens and the circled field
+  markers come out as U+E000-block code points while the kanji come out fine.
+  `kotoba.property.kanpou-pua` maps only the ones confirmed against values
+  printed elsewhere on the page (issue number 152, the date, page numbers).
+- **`(int c)` is NaN in ClojureScript** — the markers then pass through as
+  invisible characters, which looks exactly like whitespace in the output. Same
+  trap as the gBizINFO fiscal month; `code-point` now handles both runtimes.
+- **The winner's address is not always in parentheses.** With only the paren
+  form, 403 of 589 names failed to resolve because the address was still glued
+  to the name. Splitting on a prefecture name too took resolution from 131 to
+  254.
+
 ## Who owns whom (Level 2 / RR)
 
 Level 1 says who a legal entity is. It carries no edge, so no Level 1
