@@ -19,6 +19,29 @@
           on 2026-08-01). Same publisher, same CC0 terms, no account. Corporate
           identity only -- no natural-person data, so DATA-GOVERNANCE.md's UBO
           restrictions do not apply to it."}
+  {:authority/id "JP/NTA-Houjin-Bangou"
+   :jurisdiction "JP"
+   :authority "国税庁 (National Tax Agency)"
+   :dataset "法人番号 基本3情報 (商号・所在地・法人番号)"
+   :status :allow-login-free
+   :property-owner-data? false
+   :natural-person-ubo-data? false
+   :url "https://www.houjin-bangou.nta.go.jp/"
+   :bulk-url "https://www.houjin-bangou.nta.go.jp/download/zenken/"
+   :bulk-licence "公共データ利用規約（第1.0版）"
+   :attribution "出典：国税庁法人番号公表サイト（国税庁）https://www.houjin-bangou.nta.go.jp/download/zenken/ を加工して作成"
+   :reviewed-at "2026-08-18"
+   :note "Two endpoints of one authority, and only one of them is an ingest
+          path. The Web-API (api.houjin-bangou.nta.go.jp, used by
+          cloud-itonami-isic-8291) answers one company at a time and needs an
+          Application ID the NTA issues to a named operator over ~2-4 weeks;
+          the 全件データ download needs no account at all -- one POST of the
+          page's session token and a file number. 5,816,535 rows on the
+          2026-07-31 publish. 法人番号 is issued to legal entities and
+          unincorporated associations, never to a sole proprietor, so the file
+          carries no natural-person data and DATA-GOVERNANCE.md's UBO
+          restrictions do not apply to it. The licence is not CC0: attribution
+          is required and a derived work must say it is derived."}
   {:authority/id "US-NY-NYC/NYC-OpenData"
    :jurisdiction "US-NY-NYC"
    :authority "New York City Open Data"

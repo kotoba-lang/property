@@ -49,6 +49,25 @@ in `var/` or in a governed database. Companies House PSC and HM Land Registry
 CCOD/OCOD extracts are **not** permitted in `data/` — they are licensed or
 person-adjacent.
 
+## 法人番号 (NTA, JP) — permitted to collect here, published elsewhere
+
+Reviewed 2026-08-18. The National Tax Agency's 全件データ carries no
+natural-person data: a 法人番号 is issued to a legal entity or an
+unincorporated association, never to a sole proprietor. Its licence,
+公共データ利用規約（第1.0版）, permits redistribution with attribution, and
+requires a derived work to say that it is derived — both travel in every
+manifest line as `:source/attribution`, not only in a README.
+
+Two rules follow, and they differ from GLEIF's:
+
+- The corpus (~2.6 GB) stays in `~/.cache/houjin-bangou` on the node that cut
+  it, like every other corpus in this repository.
+- **Projections are not committed to this repository.** They go to the private
+  `com-junkawasaki/jp-go-nta-houjin-bangou`. The rows are public government
+  data; the *selection* is not — a `joined` tier is chosen by which companies
+  this workspace does business with, and publishing that selection from a
+  public repo would publish a customer list assembled from public parts.
+
 Added 2026-08-03 (ADR-2608031900): **GLEIF Level 2 relationship records**
 (`data/gleif-relationship-*.datoms.edn`). Both ends of every edge are LEIs —
 that is, legal entities — so the file contains no natural-person data at all.
