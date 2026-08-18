@@ -16,6 +16,7 @@
     (str/starts-with? source "gleif-level-1:") "GLOBAL/GLEIF"
     (= source "nta-houjin-bangou-zenken") "JP/NTA-Houjin-Bangou"
     (= source "nta-invoice-zenken") "JP/NTA-Invoice"
+    (= source "jgrants-public-subsidies") "JP/Digital-Agency-jGrants"
     (= source "companies-house-psc") "GB/Companies-House"
     (= source "hmlr-uk-corporate-property") "GB-ENG-WLS/HM-Land-Registry"
     :else nil))
