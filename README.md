@@ -154,6 +154,53 @@ cost is why the whole corpus is not loaded: 200k entities take 85 s and
 614 MB, 600k take 290 s and 1.2 GB, so 3.4M would be ~30 min and ~6 GB on
 every query.
 
+## Every Japanese legal entity (法人番号 全件データ)
+
+GLEIF answers "who is this legal entity" for the 3.4M entities that have an
+LEI; in Japan that is a few thousand. The National Tax Agency publishes the
+whole domestic registry — **5,816,535 entities in the 2026-07-31 publish** — as
+a monthly full file. `cloud-itonami-isic-8291`'s Web-API client is the *lookup*
+path for the same authority (one company at a time, and it needs an Application
+ID the NTA issues to a named operator over ~2-4 weeks); this is the *ingest*
+path, and it needs no account at all.
+
+```bash
+# 1. download this month's national file (~266 MB) and stream it into a corpus
+nbb -cp src scripts/collect_houjin_bangou_zenken.cljs --download
+
+# 2. ask the corpus registry-scale questions (filters and counts, no joins)
+nbb -cp src scripts/query_houjin_bangou_corpus.cljs \
+  --corpus ~/.cache/houjin-bangou/houjin-bangou-corpus.edn \
+  --group-by company/nta-kind
+
+# 3. project the slice you want to join into the workspace query plane
+nbb -cp src scripts/project_houjin_bangou_corpus.cljs \
+  --corpus ~/.cache/houjin-bangou/houjin-bangou-corpus.edn \
+  --kind 101,201 --latest-only --active-only \
+  --out <jp-go-nta-houjin-bangou>/data/houjin-bangou-public-bodies.datoms.edn
+```
+
+Two things differ from GLEIF, and both are load-bearing:
+
+- **The licence is not CC0.** 公共データ利用規約（第1.0版） requires attribution
+  and requires a derived work to say it is derived, so every corpus and
+  projection manifest carries `:source/attribution` with the exact wording.
+- **The projections are not committed here.** They go to the private
+  `com-junkawasaki/jp-go-nta-houjin-bangou`, because a `joined` tier is
+  *selected by which companies this workspace is interested in* — the rows are
+  public, the selection is not. This repo (public) holds the collector, the
+  projector and their tests; it holds no JP company data.
+
+`:company/registration-no` carries the same 13 digits as
+`:company/houjin-bangou`, because that is the attribute GLEIF's Golden Copy
+already uses for a JP entity's national registry number — so a GLEIF record
+and an NTA record join with no translation layer.
+
+**Name resolution is the part that is easy to get quietly wrong.** A JP company
+name is not a key: 株式会社うるる is two different companies in this file. The
+projector keeps `:exact`, `:core` (form-insensitive) and `:ambiguous` apart, and
+an ambiguous name resolves to *nothing* and is reported by name in `--report`.
+
 ## Who owns whom (Level 2 / RR)
 
 Level 1 says who a legal entity is. It carries no edge, so no Level 1
