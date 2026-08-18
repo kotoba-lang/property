@@ -283,6 +283,37 @@ awards, 4 fiscal-year-ends, 0 subsidies. `finance` returns nothing for most
 companies — gBizINFO carries filings only where they exist, so absence is
 normal and is *not* recorded as a zero.
 
+## 決算期 for companies that file no securities report (官報決算公告)
+
+gBizINFO's finance is EDINET-derived, so it answers 決算期 for listed companies
+and nobody else. The only public route for the rest is the Companies Act art.
+440 announcement, printed in 官報 every publication day.
+
+```bash
+nbb -cp src scripts/collect_kanpou_kessan.cljs --back 14 --out <repo>/data/kanpou-kessan.datoms.edn
+```
+
+Measured 2026-08-18, 14 publication days: **1,303 決算公告 headlines → 472
+records (36%)**, ~34 companies a day landing with a fiscal year end, a period
+number, an address and paid-in capital.
+
+Three constraints, all load-bearing:
+
+- **Only the last 90 days are free.** There is no archive behind it, so this is
+  data you accumulate — an uncollected day is lost, which is the first thing in
+  this repository that genuinely needs a daily cell.
+- **The 36% is the parser, not the day.** The remainder are mostly vertical-set
+  notices with kanji numerals (公益信託 and similar). The collector prints
+  headlines *and* records every run, because a parser that quietly dropped two
+  thirds would look exactly like a quiet day.
+- **The notices carry no 法人番号** — only a name and an address. Linking them to
+  the corporate registry is name resolution, which
+  `houjin-bangou-projection/resolve-names` already does, including refusing to
+  resolve a name two companies share.
+
+Representative directors' names appear in every notice and are dropped on the
+way in, for the same reason `gbizinfo/basic-record` drops them.
+
 ## Who owns whom (Level 2 / RR)
 
 Level 1 says who a legal entity is. It carries no edge, so no Level 1

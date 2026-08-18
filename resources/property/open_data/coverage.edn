@@ -102,6 +102,25 @@
           only under --demo and only under a request cap. gBizINFO is itself an
           aggregator of ministry data: reading it is the cheap path to 交付実績
           and 財務, not independence from it."}
+  {:authority/id "JP/NPB-Kanpou"
+   :jurisdiction "JP"
+   :authority "国立印刷局 (官報)"
+   :dataset "会社決算公告 (Companies Act art. 440 announcements)"
+   :status :allow-login-free
+   :property-owner-data? false
+   :natural-person-ubo-data? false
+   :url "https://kanpou.npb.go.jp/"
+   :bulk-licence "官報は公表物。公告本文の再配布ではなく、決算期等の事実のみを抽出する"
+   :attribution "出典：官報（国立印刷局）https://kanpou.npb.go.jp/ を加工して作成"
+   :reviewed-at "2026-08-18"
+   :note "The only public route to 決算期 for an unlisted company -- gBizINFO's
+          finance is EDINET-derived and therefore listed companies only. Three
+          constraints stated up front: only the last 90 days are free (this is
+          data you accumulate, and an uncollected day is lost); the filing rate
+          is low, so absence is not evidence of no fiscal year; and the notices
+          carry no 法人番号, so linking to the corporate registry is name
+          resolution. Representative directors' names appear in the notices and
+          are dropped on the way in."}
   {:authority/id "US-NY-NYC/NYC-OpenData"
    :jurisdiction "US-NY-NYC"
    :authority "New York City Open Data"
