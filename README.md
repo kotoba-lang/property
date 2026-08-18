@@ -201,6 +201,47 @@ name is not a key: 株式会社うるる is two different companies in this file
 projector keeps `:exact`, `:core` (form-insensitive) and `:ambiguous` apart, and
 an ambiguous name resolves to *nothing* and is reported by name in `--report`.
 
+## Is this company a registered invoice issuer (適格請求書発行事業者)
+
+A second NTA site, a second monthly full file, and one question the corporate
+registry cannot answer: is this counterparty registered to issue a qualified
+invoice, since when, and is that registration still live.
+
+```bash
+# 法人 + 人格のない社団等 only (the default)
+nbb -cp src scripts/collect_invoice_zenken.cljs --download
+# also the sole proprietors — node-local corpus only, see below
+nbb -cp src scripts/collect_invoice_zenken.cljs --download --kinds all
+
+nbb -cp src scripts/project_invoice_corpus.cljs \
+  --corpus ~/.cache/invoice-kohyo/invoice-corpus.edn \
+  --number-file <法人番号 the plane already has> --latest-only \
+  --out <jp-go-nta-houjin-bangou>/data/invoice-joined.datoms.edn
+```
+
+For a corporation the registration number is `T` + its 法人番号, so every
+corporate row joins to the 法人番号 registry, to GLEIF, and to everything else on
+`:company/registration-no` with no translation.
+
+**A sole proprietor's number is not a 法人番号**, and
+`invoice-zenken/projectable?` refuses those rows — the projector counts each
+refusal instead of filtering silently, and the projections repo re-checks the
+committed artifact. Measured on the 2026-07-31 publish: 5,069,446 registrations,
+of which 2,491,986 are individuals; the individual archive publishes no names at
+all (0 of 200,000 sampled rows carry `name` or `tradeName`), so what is being
+kept off the shared plane is a person-linked identifier, not a name list.
+
+Two details that cost a run each to learn, kept here so the next reader does not
+pay for them again:
+
+- the CSV quotes its registration number (`1,"T1030005007532",01,…`) while the
+  法人番号 file quotes only text fields;
+- **取消 (`disposalDate`) comes before 失効 (`expireDate`)** in the column order,
+  which is the opposite of the order a reader expects, and swapping them
+  silently swaps two dates that both mean "this registration ended". The column
+  names come from the JSON publish of the same records — the only artifact the
+  authority ships that states the order unambiguously.
+
 ## Who owns whom (Level 2 / RR)
 
 Level 1 says who a legal entity is. It carries no edge, so no Level 1

@@ -42,6 +42,28 @@
           carries no natural-person data and DATA-GOVERNANCE.md's UBO
           restrictions do not apply to it. The licence is not CC0: attribution
           is required and a derived work must say it is derived."}
+  {:authority/id "JP/NTA-Invoice"
+   :jurisdiction "JP"
+   :authority "国税庁 (National Tax Agency)"
+   :dataset "適格請求書発行事業者公表事項 (invoice registry)"
+   :status :allow-login-free
+   :property-owner-data? false
+   :natural-person-ubo-data? false
+   :natural-person-data? :individual-registrants-only
+   :url "https://www.invoice-kohyo.nta.go.jp/"
+   :bulk-url "https://www.invoice-kohyo.nta.go.jp/download/zenken"
+   :bulk-licence "公共データ利用規約（第1.0版）"
+   :attribution "出典：国税庁適格請求書発行事業者公表サイト（国税庁）https://www.invoice-kohyo.nta.go.jp/download/zenken を加工して作成"
+   :reviewed-at "2026-08-18"
+   :note "A second NTA site, and a different rule from JP/NTA-Houjin-Bangou.
+          法人 and 人格のない社団等 rows carry `T` + 法人番号 and no
+          natural-person data -- they join to the corporate registry and may be
+          projected. 個人 rows are a natural person's name (plus trading name
+          and address where the registrant asked for publication): collectable
+          to a node-local corpus for a lookup, never committed to `data/` and
+          never loaded onto the shared query plane. That split is enforced by
+          `invoice-zenken/projectable?`, not only by this note. Monthly publish,
+          one GET per split, no account."}
   {:authority/id "US-NY-NYC/NYC-OpenData"
    :jurisdiction "US-NY-NYC"
    :authority "New York City Open Data"
