@@ -74,3 +74,56 @@
          (gb/aspect-url "1000020012131" :subsidy)))
   (is (= "https://api.info.gbiz.go.jp/hojin/v2/hojin/1000020012131/procurement"
          (gb/aspect-url "1000020012131" :procurement))))
+
+(def basic-info
+  {"corporate_number" "6011201014757"
+   "name" "株式会社カオナビ"
+   "representative_name" "代表取締役社長CEO　　佐藤　寛之"
+   "capital_stock" 1212000000
+   "employee_number" 304
+   "date_of_establishment" "2008-05-27"
+   "industry" ["G"]
+   "business_items" ["220" "229"]
+   "qualification_grade" "、B、B、"})
+
+(deftest basic-record-drops-the-representative
+  (let [r (gb/basic-record "6011201014757" basic-info)]
+    (is (= "304" (:company/employee-number r)))
+    (is (= "1212000000" (:company/capital-stock-yen r)))
+    (is (= "2008-05-27" (:company/established-at r)))
+    (is (= ["G"] (:company/industry-codes r)))
+    (testing "the representative director's personal name is not committed —
+              a person-indexed dataset assembled out of a company registry is
+              the same line the invoice registry's 個人 rows are kept behind"
+      (is (nil? (:company/representative-name r)))
+      (is (not (some #(re-find #"佐藤" (str %)) (vals r)))))))
+
+(deftest patent-records-are-one-per-registration
+  (let [recs (vec (gb/patent-records
+                   "6011201014757"
+                   {"name" "株式会社カオナビ"
+                    "patent" [{"patent_type" "商標" "registration_number" "6794830"
+                               "application_date" "2023-08-23" "title" "ラーニングライブラリ"
+                               "classifications" [{"コード値" "42" "日本語" "科学技術又は産業に関する調査研究"}]}
+                              {"patent_type" "特許" "registration_number" ""}]}))]
+    (testing "a registration with no number is not a record"
+      (is (= 1 (count recs))))
+    (let [r (first recs)]
+      (is (= "6794830" (:patent/registration-number r)))
+      (is (= "商標" (:patent/type r)))
+      (is (= ["科学技術又は産業に関する調査研究"] (:patent/classifications r))))))
+
+(deftest workplace-record-is-nil-when-nothing-was-reported
+  (testing "an all-null workplace block produces no entity — an entity of nils
+            would read as measured-and-zero"
+    (is (nil? (gb/workplace-record "1" {"workplace_info"
+                                        {"base_infos" {"average_age" nil}
+                                         "women_activity_infos" {}
+                                         "compatibility_of_childcare_and_work" {}}}))))
+  (let [r (gb/workplace-record "1" {"name" "X"
+                                    "workplace_info"
+                                    {"base_infos" {"average_continuous_service_years_Male" 2.6}
+                                     "women_activity_infos" {"female_workers_proportion" 32.4}
+                                     "compatibility_of_childcare_and_work" {}}})]
+    (is (= "2.6" (:workplace/service-years-male r)))
+    (is (= "32.4" (:workplace/female-proportion r)))))

@@ -53,10 +53,14 @@
   (let [info (first (get body "hojin-infos"))]
     (when info
       (case aspect
+        :basic (some-> (gb/basic-record n info) vector)
         :subsidy (gb/subsidy-records n info)
         :procurement (gb/procurement-records n info)
         :finance (some-> (gb/finance-record n info) vector)
-        nil))))
+        :patent (gb/patent-records n info)
+        :workplace (some-> (gb/workplace-record n info) vector)
+        :certification (gb/certification-records n info)
+        (throw (ex-info "unknown aspect" {:aspect aspect :known (keys gb/aspects)}))))))
 
 (defn -main []
   (let [args (vec *command-line-args*)
@@ -64,7 +68,7 @@
         numbers-file (arg-value args "--numbers" nil)
         demo? (flag? args "--demo")
         max-requests (js/parseInt (arg-value args "--max-requests" (if demo? "120" "0")) 10)
-        aspects (mapv keyword (str/split (arg-value args "--aspects" "subsidy,procurement,finance") #","))
+        aspects (mapv keyword (str/split (arg-value args "--aspects" "basic,subsidy,procurement,finance,patent,workplace,certification") #","))
         env-token (.. js/process -env -GBIZINFO_TOKEN)
         token (if demo? gb/demo-token env-token)]
     (when-not (and out numbers-file)
