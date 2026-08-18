@@ -19,6 +19,7 @@
     (= source "jgrants-public-subsidies") "JP/Digital-Agency-jGrants"
     (= source "gbizinfo-rest-v2") "JP/METI-gBizINFO"
     (= source "kanpou-kessan-koukoku") "JP/NPB-Kanpou"
+    (= source "kanpou-chotatsu-rakusatsu") "JP/NPB-Kanpou"
     (= source "companies-house-psc") "GB/Companies-House"
     (= source "hmlr-uk-corporate-property") "GB-ENG-WLS/HM-Land-Registry"
     :else nil))
