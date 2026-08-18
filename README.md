@@ -258,6 +258,31 @@ which are not ingested. Coverage is a union of keyword queries because the API
 requires a 2+ character keyword and has no enumeration (an empty one is HTTP
 400), so the keyword set is recorded in the artifact.
 
+## What the state gave, bought and recorded (gBizINFO)
+
+```bash
+GBIZINFO_TOKEN=... nbb -cp src scripts/collect_gbizinfo.cljs \
+  --numbers <法人番号 one per line> --aspects subsidy,procurement,finance \
+  --out <jp-go-gbiz-info>/data/gbizinfo-joined.datoms.edn
+```
+
+One request per company per aspect, keyed on 法人番号 — so the allowlist is the
+cost and the unit is "the companies this plane already carries", not a universe.
+It answers what neither NTA registry can: 補助金交付, 調達, and **決算期**
+(`:company/fiscal-year-end-month`, parsed from `fiscal_year_cover_page`).
+
+A real pass needs the operator's own token: the 利用申請 registers the operator's
+identity with 経済産業省, so an agent must not obtain it. `--demo` uses the
+動作確認 token the public OpenAPI document publishes **under a request cap** —
+a verification that could silently become a bulk pass on a shared token is not a
+verification, so the cap is enforced in code and the token kind is written into
+the artifact's manifest.
+
+Measured 2026-08-18 (16 companies, 48 requests, demo token): 23 procurement
+awards, 4 fiscal-year-ends, 0 subsidies. `finance` returns nothing for most
+companies — gBizINFO carries filings only where they exist, so absence is
+normal and is *not* recorded as a zero.
+
 ## Who owns whom (Level 2 / RR)
 
 Level 1 says who a legal entity is. It carries no edge, so no Level 1

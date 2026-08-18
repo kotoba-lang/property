@@ -82,6 +82,26 @@
           the 公募 side only -- which programmes exist. It carries no 交付実績 and
           no 法人番号, so it does NOT answer whether a given company received a
           subsidy; that lives in per-programme 採択者一覧 spreadsheets."}
+  {:authority/id "JP/METI-gBizINFO"
+   :jurisdiction "JP"
+   :authority "経済産業省 (gBizINFO)"
+   :dataset "法人活動情報 (補助金交付・調達・財務・届出認定)"
+   :status :allow-login-free
+   :property-owner-data? false
+   :natural-person-ubo-data? false
+   :url "https://info.gbiz.go.jp/"
+   :bulk-url "https://api.info.gbiz.go.jp/hojin/v2/hojin"
+   :bulk-licence "gBizINFO API・データダウンロード利用規約"
+   :attribution "出典：gBizINFO（経済産業省）https://info.gbiz.go.jp/ を加工して作成"
+   :reviewed-at "2026-08-18"
+   :note "Keyed on 法人番号 throughout, so it enriches entities this plane already
+          has rather than adding a population. A real pass needs the operator's
+          own API token (利用申請 by email, self-serve, ~2 minutes) -- an agent
+          must not register the operator's identity with a ministry. The public
+          OpenAPI document publishes a 動作確認 token; the collector will use it
+          only under --demo and only under a request cap. gBizINFO is itself an
+          aggregator of ministry data: reading it is the cheap path to 交付実績
+          and 財務, not independence from it."}
   {:authority/id "US-NY-NYC/NYC-OpenData"
    :jurisdiction "US-NY-NYC"
    :authority "New York City Open Data"
