@@ -44,7 +44,14 @@
 
 (defn- clean [v]
   (when v
-    (-> (first (str/split (str v) furniture-re))
+    (-> (str v)
+        ;; 段組の折り返しで、次の公示のヘッダがフィールド値の末尾に流れ込む。
+        ;; 契約責任者以降は別の公示のものなので落とす —— 実測で 673 件中 7 件の
+        ;; 社名に「契約責任者…中国支社長本園民雄」がくっついており、**担当者の
+        ;; 氏名が社名フィールドに入っていた**。
+        (str/split #"契約責任者") first
+        (str/replace (re-pattern pua/sep) " ")
+        (as-> x (first (str/split x furniture-re)))
         (str/replace #"\(号外政府調達第[^)]*\)" "")
         str/trim)))
 
@@ -148,10 +155,37 @@
 
 (def ^:private agency-re #"契約責任者\s*([^（(\n]{2,60})")
 (def ^:private officer-title-re
-  ;; 発注機関の表記には「支社長 金田 泰明」のように**担当者の氏名**が続く。
-  ;; 役職語で切って組織名だけを残す —— gbizinfo/basic-record が代表者名を落とすのと
-  ;; 同じ理由で、公表物だからといって個人名を持ち歩かない。
-  #"(支社長|社長|部長|課長|所長|局長|署長|次長|理事長|総括|会長|管理官|責任者)")
+  ;; 発注機関の表記には担当者の役職と氏名が続く（支社長 金田 泰明 /
+  ;; 財務担当理事 鈴木 康晴 / 理事 井上 賢一）。役職語で切って組織名だけを残す。
+  ;;
+  ;; **最初の版は「支社長」等しか知らず、「財務担当理事 鈴木 康晴」がそのまま
+  ;; committed data に入った** —— 公表物であっても個人名を持ち歩かない、という
+  ;; 線を自分で越えていた。役職語は広く採り、それでも残る「姓 名」は下の
+  ;; `trailing-personal-name-re` が落とす。
+  #"(代表執行役|執行役|支社長|支店長|工場長|支所長|事務局長|事務所長|病院長|院長|総長|学長|校長|園長|館長|センター長|社長|副社長|専務|常務|部長|次長|課長|所長|局長|署長|統括|総括|理事長|理事|監事|参事|審議官|管理官|会長|責任者|担当官|支出負担行為担当官|分任支出負担行為担当官)")
+
+(def ^:private head-and-name-re
+  ;; 「…宇都宮病院長 杉山公美弥」— 組織名の末尾が 長 で、その後ろに氏名が続く形。
+  ;; 役職語リストで切ると 病院 の途中を割ってしまうので、こちらを先に当てる。
+  ;; 姓と名の間に空白が無い氏名（杉山公美弥）もあるので、空白は 長 の直後だけを見る。
+  #"長[\s　]+[一-龥ぁ-んァ-ヶ]{2,10}\s*$")
+
+(def ^:private trailing-role-re
+  ;; 役職語で切ると「…国立印刷局財務担当」のように担務が残る。組織名の末尾に
+  ;; 付く担務も落とす。
+  ;; 担務は列挙する。`[^\s]{0,6}担当$` のようなワイルドカードは
+  ;; 「独立行政法人国立印刷局財務担当」から**組織名まで削って**
+  ;; 「独立行政法人国」にした（実測）。
+  #"(?:財務|会計|経理|総務|契約|調達|人事|管理|支出)?担当$")
+
+(def ^:private trailing-personal-name-re
+  ;; 「… 鈴木 康晴」「… 井上 賢一」— 末尾の 姓+空白+名。組織名は空白で切れた
+  ;; 2 語で終わらないので、これで落ちるのは実質的に人名だけ。
+  #"[\s　][一-龥ぁ-んァ-ヶ]{1,5}[\s　]+[一-龥ぁ-んァ-ヶ]{1,5}\s*$")
+
+(def ^:private agency-furniture-re
+  ;; 段組の running head が発注機関の位置に流れ込むことがある（「月曜日」など）。
+  #"^(月曜日|火曜日|水曜日|木曜日|金曜日|土曜日|日曜日|官|報|令和.*)$")
 
 (def ^:private agency-code-re #"◎調達機関番号\s*(\d{2,4})")
 
@@ -169,7 +203,15 @@
         acc
         (let [chunk (nth chunks i)
               agency' (or (some-> (last (re-seq agency-re chunk)) second str/trim clean
-                                  (str/split officer-title-re) first str/trim)
+                                  (str/replace head-and-name-re "")
+                                  (str/split officer-title-re) first
+                                  (str/replace trailing-personal-name-re "")
+                                  str/trim
+                                  (str/replace trailing-role-re "")
+                                  str/trim
+                                  (as-> a (when-not (or (str/blank? a)
+                                                        (re-matches agency-furniture-re a))
+                                            a)))
                           agency)
               code' (or (some-> (last (re-seq agency-code-re chunk)) second) code)
               rec (when (pos? i)
