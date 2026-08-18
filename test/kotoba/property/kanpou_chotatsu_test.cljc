@@ -73,3 +73,31 @@
   (is (= "2025-10-17" (kc/wareki-ymd " 7.10.17")))
   (is (nil? (kc/wareki-ymd "令和8年6月8日")))
   (is (nil? (kc/wareki-ymd nil))))
+
+(deftest agency-keeps-the-organisation-and-drops-the-person
+  (testing "「財務担当理事 鈴木 康晴」がそのまま committed data に入っていた —
+            役職語は広く採り、それでも残る 姓+名 は末尾で落とす"
+    (let [sec (str "契約責任者 独立行政法人国立印刷局財務担当理事 鈴木 康晴\n"
+                   (marker 1) "41 " (marker 6) "三菱電機システムサービス株式会社（東京都）"
+                   (marker 7) "37,775,023円\n")
+          r (first (kc/parse-section sec "2026-08-18"))]
+      (is (= "独立行政法人国立印刷局" (:grant/ministry r)))
+      (is (not-any? #(re-find #"鈴木|康晴" (str %)) (vals r)))))
+  (testing "段組の running head が発注機関の位置に流れ込んだら、機関名にしない"
+    (let [sec (str "契約責任者 月曜日\n"
+                   (marker 1) "41 " (marker 6) "日本電計株式会社（東京都）"
+                   (marker 7) "94,125,460円\n")
+          r (first (kc/parse-section sec "2026-08-18"))]
+      (is (nil? (:grant/ministry r)))
+      (is (= "日本電計株式会社" (:company/legal-name r))))))
+
+(deftest agency-cases-that-actually-appeared
+  (testing "実際に committed data に入っていた 4 通り。どれも組織名だけを残す"
+    (doseq [[raw expected]
+            [["独立行政法人国立病院機構宇都宮病院長 杉山公美弥" "独立行政法人国立病院機構宇都宮病院"]
+             ["株式会社かんぽ生命保険 代表執行役" "株式会社かんぽ生命保険"]
+             ["独立行政法人国立印刷局財務担当理事 鈴木 康晴" "独立行政法人国立印刷局"]
+             ["東日本高速道路株式会社 関東支社 支社長 金田 泰明" "東日本高速道路株式会社 関東支社"]]]
+      (let [sec (str "契約責任者 " raw "\n"
+                     (marker 1) "1 " (marker 6) "テスト株式会社（東京都）" (marker 7) "1,000円\n")]
+        (is (= expected (:grant/ministry (first (kc/parse-section sec "2026-08-18")))))))))
