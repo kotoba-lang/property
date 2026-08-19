@@ -156,7 +156,8 @@
   (keep #(block->record % published-at) (split-blocks text)))
 
 (defn corpus-manifest
-  [{:keys [observed-at record-count headlines issues window-days ambiguous-count]}]
+  [{:keys [observed-at record-count headlines issues window-days ambiguous-count
+           pages pages-without-text]}]
   (cond-> {:corpus/manifest true
            :corpus/projection true
            :corpus/format :edn-lines
@@ -170,5 +171,11 @@
     ;; 3 分の 2 を静かに落としたパーサが「静かな日」と同じ顔をする。**
     headlines (assoc :projection/headlines headlines)
     issues (assoc :projection/issues issues)
+    ;; **源泉のどれだけを読めなかったか。** 官報の PDF は全頁に画像が敷かれ、
+    ;; テキスト層が載らない頁がある（実測 2026-08-19: 窓の 32%、本紙は 57%）。
+    ;; 上の歩留まりは*読めた頁の中での*値なので、この 2 つが無いと
+    ;; 「源泉の 3 分の 1 が見えていない」ことが数字から消える。
+    pages (assoc :projection/source-pages pages)
+    pages-without-text (assoc :projection/source-pages-without-text pages-without-text)
     (some? ambiguous-count) (assoc :corpus/ambiguous-count ambiguous-count)
     record-count (assoc :corpus/record-count record-count)))
