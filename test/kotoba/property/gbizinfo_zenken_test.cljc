@@ -111,3 +111,17 @@
     (is (= 2 (count (:source/publish m))))
     (doseq [k [:source/authority :source/licence :source/attribution :source/observed-at]]
       (is (not (clojure.string/blank? (str (get m k)))) (str "manifest has no " k)))))
+
+(deftest record-count-is-what-this-file-holds
+  ;; ⚠ 以前は「読んだ元ファイルの行数」を入れており、同じ key が dataset によって
+  ;; 別のものを指していた（実測 2026-08-20: 合計 1,035,804 に対しファイルの実体 3,034）。
+  ;; **key が 2 つの意味を持つと、それを使う検査は全部不健全になる。**
+  (let [m (gz/manifest {:section {:key :subsidy :label "補助金"}
+                        :rows 545877 :matched 124976 :companies 2431 :records 545
+                        :observed-at "2026-08-20T00:00:00Z"
+                        :content-sha256 (apply str (repeat 64 "a"))
+                        :publish "Hojokinjoho_UTF-8_20260819.zip"})]
+    (is (= 545 (:corpus/record-count m)) "このファイルに書いた件数")
+    (is (= 545877 (:projection/source-rows m)) "読んだ元ファイルの行数")
+    (is (= 124976 (:projection/matched-rows m)))
+    (is (= 2431 (:projection/company-count m)))))

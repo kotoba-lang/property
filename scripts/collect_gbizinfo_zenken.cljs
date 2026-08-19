@@ -179,15 +179,16 @@
              (sh ["cp" zip (.join path ar filename)]))
            (when-not (flag? "--keep-zip") (sh ["rm" "-rf" zip (str zip ".d")]))
            {:section section :rows (count rows) :matched matched
-            :manifest (gz/manifest {:section section :rows (count rows)
-                                    :matched (count matched)
-                                    :companies (count (distinct (map :company/houjin-bangou matched)))
-                                    :observed-at observed-at
-                                    :content-sha256 sha256
-                                    :publish filename})}))))
+            ;; manifest は**畳んだ後**に作る（下記）。ここでは材料だけ返す ——
+            ;; 「このファイルに書いた件数」は、government を畳んでからでないと出ない。
+            :manifest-input {:section section :rows (count rows)
+                             :matched (count matched)
+                             :companies (count (distinct (map :company/houjin-bangou matched)))
+                             :observed-at observed-at
+                             :content-sha256 sha256
+                             :publish filename}}))))
 
 (def all-records (into [] (mapcat :matched) results))
-(def manifests (mapv :manifest results))
 
 ;; ── 列挙する行と、集計に畳む行を分ける ───────────────────────────────────
 ;;
@@ -229,6 +230,20 @@
        (mapv summarise-company)))
 
 (def records enumerated)
+
+;; ⚠ **`:corpus/record-count` は「このファイルに書いた件数」**。以前は読んだ元
+;; ファイルの行数を入れており、同じ key が dataset によって別のものを指していた
+;; （実測 2026-08-20: 合計すると 1,035,804、ファイルの実体は 3,034）。
+;; section ごとの件数は `:grant/kind` で数える（記録は section を kind として持つ）。
+(def per-section-records
+  (frequencies (keep :grant/kind enumerated)))
+
+(def manifests
+  (mapv (fn [{:keys [manifest-input]}]
+          (gz/manifest (assoc manifest-input
+                              :records (get per-section-records
+                                            (:key (:section manifest-input)) 0))))
+        results))
 
 ;; 1 行 1 entity（面のローダが読む形）。
 (.mkdirSync fs (.dirname path out) #js {:recursive true})
