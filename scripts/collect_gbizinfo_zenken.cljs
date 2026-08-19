@@ -171,6 +171,12 @@
                          (count matched) " matched, "
                          (count (distinct (map :company/houjin-bangou matched))) " companies"
                          "  [" filename "]"))
+           ;; corpus をどこかに残すなら、消す前にそこへ置く。`--archive-to <dir>` は
+           ;; `<dir>/<配布ファイル名>` に zip をそのまま置く —— 配布名が publish の
+           ;; 日付を持っているので、あとから「いつの版か」を receipt 無しで言える。
+           (when-let [ar (arg "--archive-to" nil)]
+             (.mkdirSync fs ar #js {:recursive true})
+             (sh ["cp" zip (.join path ar filename)]))
            (when-not (flag? "--keep-zip") (sh ["rm" "-rf" zip (str zip ".d")]))
            {:section section :rows (count rows) :matched matched
             :manifest (gz/manifest {:section section :rows (count rows)
