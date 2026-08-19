@@ -16,7 +16,7 @@
    （下記）で 200 が返る。robots.txt は存在しない（404 ページが返る）。
 
    usage:
-     nbb -cp src scripts/collect_gyousei_review.cljs --xlsx <file> --out <o> [--year 2024]
+     nbb -cp src scripts/collect_gyousei_review.cljs --xlsx <file> --out <o> [--review-year 2024]
        [--dropped-out <f>]   組織だと言えず落とした名前（規則の点検用）
        [--numbers <f>]       面が持つ法人番号だけに絞る
        [--fold]              会社 × 府省に畳む（面に置く形。明細は corpus に残る）
@@ -70,7 +70,9 @@
 
 (defn -main []
   (let [out (arg "--out" nil)
-        year (arg "--year" nil)
+        ;; **払った年ではなく、どの版のデータベースかを記録する。** シートは
+        ;; 「支出先リストに前年度に入札等を行ったものが含まれる」と自ら注記している。
+        review-year (arg "--review-year" (arg "--year" nil))
         xlsx (arg "--xlsx" nil)]
     (when-not (and out xlsx)
       (println "usage: collect_gyousei_review.cljs --xlsx <file> --out <o> [--year 2024]")
@@ -121,7 +123,7 @@
                   :when (not (str/blank? (str (:name fields))))]
             (swap! state update :seen inc)
             (if-let [rec (gr/recipient-record {:program program :block block :rank rank
-                                               :fields fields :fiscal-year year})]
+                                               :fields fields :review-year review-year})]
               (do (swap! state update :kept-all inc)
                   (when (or (nil? wanted)
                             (contains? wanted (:company/houjin-bangou rec)))
