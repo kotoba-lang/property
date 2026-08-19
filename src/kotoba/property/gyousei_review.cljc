@@ -114,9 +114,60 @@
         (clean (:winning-rate fields))
         (assoc :grant/winning-rate (clean (:winning-rate fields)))))))
 
+(defn parse-amount
+  "「1,234」「0.5」-> 数値、「-」「」「※」-> nil。**読めない値を 0 として足さない**
+   （0 を足すと「支出が無かった」と「読めなかった」が同じ合計になる）。"
+  [s]
+  (let [t (-> (str s) (str/replace #"[,，\s　]" ""))]
+    (when (re-matches #"-?\d+(\.\d+)?" t)
+      #?(:clj (Double/parseDouble t) :cljs (js/parseFloat t)))))
+
+(defn fold-key [rec] [(:company/houjin-bangou rec) (:grant/ministry rec)])
+
+(defn fold-recipients
+  "支出先の行 -> **会社 × 府省** 1 entity。
+
+   面はクエリのたびに全部 load するので、17,808 行の明細は置かない（corpus には
+   在る）。畳んだ側が答えるのは「この会社にどの府省が、いくつの事業で、合計いくら
+   払ったか」——それ以上が要るなら corpus を引く。
+
+   **読めなかった金額は数える**（`:review/amount-unparsed`）—— 0 として足すと
+   「支出が無かった」と「読めなかった」が同じ合計になる。"
+  [records]
+  (->> records
+       (filter :company/houjin-bangou)
+       (reduce (fn [acc r]
+                 (let [k (fold-key r)
+                       amt (parse-amount (:grant/amount-million-jpy r))]
+                   (-> acc
+                       (update-in [k :payments] (fnil inc 0))
+                       (update-in [k :programs] (fnil conj #{}) (:grant/title r))
+                       (update-in [k :name] #(or % (:grant/recipient-name r)))
+                       (update-in [k :fiscal-year] #(or % (:grant/fiscal-year r)))
+                       (cond-> amt (update-in [k :total] (fnil + 0) amt))
+                       (cond-> (nil? amt) (update-in [k :unparsed] (fnil inc 0))))))
+               {})
+       (mapv (fn [[[hb ministry] v]]
+               (cond-> {:source/dataset dataset
+                        :company/houjin-bangou hb
+                        :company/registration-no hb
+                        :company/legal-name (:name v)
+                        :grant/ministry ministry
+                        :grant/kind "subsidy-or-contract"
+                        :review/payments (:payments v)
+                        :review/programs (count (:programs v))}
+                 (:fiscal-year v) (assoc :grant/fiscal-year (:fiscal-year v))
+                 (:total v) (assoc :review/total-million-jpy
+                                   #?(:clj (format "%.1f" (:total v))
+                                      :cljs (.toFixed (:total v) 1)))
+                 (:unparsed v) (assoc :review/amount-unparsed (:unparsed v)))))
+       (sort-by (juxt :company/houjin-bangou :grant/ministry))
+       vec))
+
 (defn corpus-manifest
   [{:keys [observed-at record-count programs recipients-seen dropped-individuals
-           with-houjin-bangou publish source-url organisations-seen queried]}]
+           with-houjin-bangou publish source-url organisations-seen queried
+           folded-from]}]
   (cond-> {:corpus/manifest true
            :corpus/projection true
            :corpus/format :edn-lines
@@ -137,4 +188,6 @@
     (pos? (or queried 0)) (assoc :projection/queried queried)
     with-houjin-bangou (assoc :projection/with-houjin-bangou with-houjin-bangou)
     (some? dropped-individuals) (assoc :projection/dropped-not-organisation dropped-individuals)
+    ;; 畳んだ側は**畳む前の行数**を持つ（ADR-2608181000 16 節と同じ規律）。
+    folded-from (assoc :projection/folded-from folded-from)
     record-count (assoc :corpus/record-count record-count)))
