@@ -88,3 +88,26 @@
     (is (not (gz/houjin-bangou? "60100010966591")))
     (is (not (gz/houjin-bangou? "6010001096659\n")))
     (is (not (gz/houjin-bangou? nil)))))
+
+(deftest summary-manifest-carries-both-denominators
+  ;; 畳んだ projection は、畳む前が何行だったかを自分では答えられない。
+  ;; 実測 2026-08-19、この summary ファイルは manifest を 1 本も持っていなかった。
+  (let [m (gz/summary-manifest {:summaries 2358
+                                :folded-rows 125144
+                                :companies 2358
+                                :sections [:subsidy :procurement]
+                                :observed-at "2026-08-19T00:57:47.622Z"
+                                :publishes ["Hojokinjoho_UTF-8_20260819.zip"
+                                            "Chotatsujoho_UTF-8_20260819.zip"]
+                                :joined-file "gbizinfo-zenken-joined.datoms.edn"})]
+    (is (true? (:corpus/manifest m)))
+    (is (true? (:corpus/summarised m)))
+    (is (= 2358 (:corpus/record-count m)))
+    (is (= 125144 (:projection/folded-rows m)) "畳む前の行数が無いと 2,358 が全件に読める")
+    (is (= [:subsidy :procurement] (:corpus/sections m)))
+    ;; sha256 は複製しない（複製すれば必ず片方だけ古くなる）。名前で指す。
+    (is (= "gbizinfo-zenken-joined.datoms.edn" (:corpus/sha256-recorded-in m)))
+    (is (nil? (:source/content-sha256 m)))
+    (is (= 2 (count (:source/publish m))))
+    (doseq [k [:source/authority :source/licence :source/attribution :source/observed-at]]
+      (is (not (clojure.string/blank? (str (get m k)))) (str "manifest has no " k)))))

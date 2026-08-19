@@ -235,11 +235,24 @@
 (.writeFileSync fs out (str/join "\n" (map pr-str (concat manifests enumerated))))
 
 (when-let [sout (arg "--summary-out" nil)]
-  (when (seq summarised)
-    (.mkdirSync fs (.dirname path sout) #js {:recursive true})
-    (.writeFileSync fs sout (str/join "\n" (map pr-str summarised)))
-    (println (str "  wrote " (count summarised) " summaries (folded from "
-                  (- (count all-records) (count enumerated)) " rows) -> " sout))))
+  ;; 畳んだ結果が空なのに黙って戻ると、**前回のファイルがそのまま残る** ——
+  ;; 古い集計が今回の結果として読まれる。書かない理由をここで言う。
+  (if-not (seq summarised)
+    (println (str "  WARNING no summaries folded — leaving " sout " untouched"
+                  " (the file on disk is from an earlier pass, not from this one)"))
+    (let [folded (- (count all-records) (count enumerated))
+          smanifest (gz/summary-manifest
+                     {:summaries (count summarised)
+                      :folded-rows folded
+                      :companies (count (distinct (map :company/houjin-bangou summarised)))
+                      :sections (mapv :corpus/section manifests)
+                      :observed-at observed-at
+                      :publishes (mapv :source/publish manifests)
+                      :joined-file (.basename path out)})]
+      (.mkdirSync fs (.dirname path sout) #js {:recursive true})
+      (.writeFileSync fs sout (str/join "\n" (map pr-str (cons smanifest summarised))))
+      (println (str "  wrote " (count summarised) " summaries + 1 manifest (folded from "
+                    folded " rows) -> " sout)))))
 
 (println (str "  wrote " (count enumerated) " records + " (count manifests)
               " manifest(s) -> " out))
