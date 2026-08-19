@@ -93,3 +93,22 @@
                  (if (and n (not (contains? acc n)))
                    (assoc acc n (str/trim b))
                    acc)))))))
+
+(defn page-accounting
+  "pdftotext の出力を頁に割り、**テキスト層の無い頁**を数える。
+
+   官報の PDF は全頁にスキャン画像が敷かれており、その上にテキスト層が載る頁と
+   **載らない頁**がある。実測 2026-08-19（90 日窓・220 PDF・16,086 頁）:
+   テキスト層が無い頁は **5,210（32%）**、本紙では **57%**。裁判所公告
+   （破産・特別清算・再生）はまるごとそちら側で、1 頁あたり 40 文字ほど
+   （柱と頁番号だけ）しか取れない。
+
+   なぜこれを記録するか: **歩留まりの分母が読めた頁に限られる**。
+   「見出し 6,499 に対してレコード 5,777（89%）」は*読めた頁の中での*値で、
+   読めない頁に載っていた公告は**分子にも分母にも入っていない**。この 2 つを
+   区別しないと、源泉の 3 分の 1 が見えていないことが数字の上で消える。"
+  [text]
+  (let [pages (let [ps (str/split (str text) #"\f")]
+                (if (and (seq ps) (str/blank? (last ps))) (butlast ps) ps))]
+    {:pages (count pages)
+     :pages-without-text (count (filter #(< (count (str/trim (str %))) 300) pages))}))

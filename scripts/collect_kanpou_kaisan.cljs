@@ -92,13 +92,17 @@
           (download! url dest))
         (.then (fn [file]
                  (when file
-                   (let [text (pua/normalize (pdf->text file))
+                   (let [raw (pdf->text file)
+                         acct (pua/page-accounting raw)
+                         text (pua/normalize raw)
                          blocks (count (kai/split-blocks text))
                          recs (vec (kai/parse-section text date-iso))]
                      (swap! state #(-> %
                                        (update :records into recs)
                                        (update :blocks + blocks)
-                                       (update :pdfs inc)))
+                                       (update :pdfs inc)
+                                       (update :pages + (:pages acct))
+                                       (update :pages-without-text + (:pages-without-text acct))))
                      (when (pos? blocks)
                        (println (str "    " (last (str/split url #"/"))
                                      ": " blocks " headline(s) -> " (count recs) " record(s)"))))))))))
@@ -113,11 +117,13 @@
         (.then (fn [_] (swap! state update :issues conj date))))))
 
 (defn- finish! [state out dates]
-  (let [{:keys [records blocks issues pdfs]} @state
+  (let [{:keys [records blocks issues pdfs pages pages-without-text]} @state
         manifest (kai/corpus-manifest {:observed-at (.toISOString (js/Date.))
                                        :issues (count issues)
                                        :headlines blocks
                                        :record-count (count records)
+                                       :pages pages
+                                       :pages-without-text pages-without-text
                                        :window-days 90})]
     (.mkdirSync fs (.dirname path out) #js {:recursive true})
     (.writeFileSync fs out
@@ -133,6 +139,12 @@
                       ;; and nothing else says which.
                       :headlines blocks
                       :records (count records)
+                      ;; 読めなかった頁も出す。**歩留まりは読めた頁の中の話**で、
+                      ;; 裁判所公告（破産・特別清算・再生）はまるごと読めない側に在る。
+                      :source-pages pages
+                      :source-pages-without-text pages-without-text
+                      :unreadable (when (pos? (or pages 0))
+                                    (str (js/Math.round (* 100 (/ pages-without-text pages))) "%"))
                       :yield (when (pos? blocks)
                                (str (js/Math.round (* 100 (/ (count records) blocks))) "%"))
                       :bytes (.-size (.statSync fs out))}))
@@ -154,7 +166,8 @@
       (.exit js/process 2))
     (coverage/assert-collectable! kk/source-id)
     (.mkdirSync fs cache-dir #js {:recursive true})
-    (let [state (atom {:records [] :blocks 0 :issues [] :pdfs 0})]
+    (let [state (atom {:records [] :blocks 0 :issues [] :pdfs 0
+                       :pages 0 :pages-without-text 0})]
       (-> (fetch-text (str base "/"))
           (.then (fn [front-page]
                    (when (str/blank? front-page)
