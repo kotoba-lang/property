@@ -196,6 +196,20 @@ Two things differ from GLEIF, and both are load-bearing:
 already uses for a JP entity's national registry number — so a GLEIF record
 and an NTA record join with no translation layer.
 
+**同名は住所で解く。** 官報の公告も落札公示も住所を持っているのに、名寄せは長い間
+名前しか見ていなかった。同名 2 社はほとんどの場合**県が違う**（株式会社うるるは
+中央区と香取郡東庄町）。県で絞り、同一県なら市区町村で絞る。実測 2026-08-19:
+
+| | 名前だけ | 住所つき |
+|---|---:|---:|
+| 決算公告 607/915 → | ambiguous 206 | **658/915**、ambiguous 155 |
+| 落札公示 365/673 → | ambiguous 138 | **458/673**、ambiguous 45 |
+
+市区町村は**切り出さず前方一致**で見る —— registry は「さいたま市大宮区」
+「香取郡東庄町」「中央区」をどれも 1 単位で持つので、切り出す正規表現はどれかを
+必ず取り違える。**住所がどの候補とも一致しなければ絞らない**（曖昧なままにする）。
+どう決めたかは `:company/name-match`（`:exact` / `:exact+address` …）に残る。
+
 **Name resolution is the part that is easy to get quietly wrong.** A JP company
 name is not a key: 株式会社うるる is two different companies in this file. The
 projector keeps `:exact`, `:core` (form-insensitive) and `:ambiguous` apart, and

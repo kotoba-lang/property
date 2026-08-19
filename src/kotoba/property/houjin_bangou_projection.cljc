@@ -43,6 +43,47 @@
                (or (= region w) (= region (str "JP-" w)))))
            wanted))))
 
+(def prefectures
+  ["北海道" "青森県" "岩手県" "宮城県" "秋田県" "山形県" "福島県" "茨城県" "栃木県"
+   "群馬県" "埼玉県" "千葉県" "東京都" "神奈川県" "新潟県" "富山県" "石川県" "福井県"
+   "山梨県" "長野県" "岐阜県" "静岡県" "愛知県" "三重県" "滋賀県" "京都府" "大阪府"
+   "兵庫県" "奈良県" "和歌山県" "鳥取県" "島根県" "岡山県" "広島県" "山口県" "徳島県"
+   "香川県" "愛媛県" "高知県" "福岡県" "佐賀県" "長崎県" "熊本県" "大分県" "宮崎県"
+   "鹿児島県" "沖縄県"])
+
+(def ^:private prefecture->iso
+  (into {} (map-indexed (fn [i p] [p (str "JP-" (when (< (inc i) 10) "0") (inc i))])
+                        prefectures)))
+
+(defn address->region
+  "住所文字列 -> ISO 3166-2:JP（東京都千代田区… -> JP-13）。
+
+   官報の公告も落札公示も住所を持っているのに、名寄せは名前しか見ていなかった。
+   同名 2 社は**ほとんどの場合、県が違う**（株式会社うるるは中央区と香取郡東庄町）
+   ので、この 1 行で大半が解ける。"
+  [address]
+  (when address
+    (some (fn [p] (when (str/includes? (str address) p) (get prefecture->iso p)))
+          prefectures)))
+
+(defn strip-prefecture
+  "住所から都道府県を落とす。市区町村の照合は前方一致で行うので、頭が揃っている
+   必要がある。"
+  [address]
+  (when address
+    (str/trim (reduce (fn [acc p] (str/replace acc p "")) (str address) prefectures))))
+
+(defn address-in-city?
+  "住所が registry の市区町村で始まるか。
+
+   市区町村名を**切り出さない**のは、境界が一定でないから: registry は
+   「さいたま市大宮区」「香取郡東庄町」「中央区」をどれも 1 つの市区町村として持つ。
+   切り出す正規表現はこの 3 つのどれかを必ず取り違える —— 前方一致なら取り違えない。"
+  [address city]
+  (boolean (when-let [a (strip-prefecture address)]
+             (and (not (str/blank? (str city)))
+                  (str/starts-with? a (str city))))))
+
 (defn matcher
   "Predicate over corpus records built from a selection spec.
 
@@ -95,26 +136,55 @@
             [[:exact (hb/normalize-name nm)]
              [:core (hb/name-core nm)]])))
 
-(defn resolve-names
-  "queries (raw names) + candidate map -> {:resolved {query rec}
-                                           :ambiguous {query {:level l :count n}}
-                                           :unmatched [query ...]}
+(defn- query-name [q] (if (map? q) (:name q) q))
+(defn- query-address [q] (when (map? q) (:address q)))
 
-   Exact beats core; a tie at either level is unresolved, by name."
+(defn- narrow-by-address
+  "同名の候補を住所で絞る。県が一致するものだけ残し、それでも複数なら市区町村でも
+   絞る。**推測はしない** —— 手がかりが無い（住所が無い / どれとも一致しない）なら
+   元の候補集合をそのまま返し、曖昧なままにする。"
+  [hits address]
+  (if-let [region (address->region address)]
+    (let [by-region (filterv #(= region (:company/region %)) hits)]
+      (cond
+        (= 1 (count by-region)) by-region
+        (empty? by-region) hits
+        :else (let [by-city (filterv #(address-in-city? address (:company/city %)) by-region)]
+                (if (= 1 (count by-city)) by-city by-region))))
+    hits))
+
+(defn resolve-names
+  "queries + candidate map -> {:resolved {query rec} :ambiguous {…} :unmatched […]}
+
+   query は文字列でも `{:name … :address …}` でもよい。住所を渡すと、**同名で
+   割れた候補を県（必要なら市区町村）で絞る**。実測 2026-08-19: 官報の決算公告
+   206 件・落札公示 138 件が「同名 2 社以上」で解決できずにいたが、どちらの
+   データセットも住所を持っていた。
+
+   `:company/name-match` が答えの出どころを言う: `:exact` / `:core` は名前だけ、
+   `:exact+address` / `:core+address` は住所で絞った結果。**どうやって決めたかを
+   記録しないと、後から精度を測れない。**
+
+   Exact beats core; どの水準でも絞りきれなければ解決しない。"
   [queries candidates]
   (reduce
    (fn [acc q]
-     (let [exact (get-in candidates [:exact (hb/normalize-name q)])
-           core (get-in candidates [:core (hb/name-core q)])
+     (let [nm (query-name q)
+           address (query-address q)
+           exact (get-in candidates [:exact (hb/normalize-name nm)])
+           core (get-in candidates [:core (hb/name-core nm)])
            [level hits] (cond
                           (seq exact) [:exact exact]
                           (seq core) [:core core]
-                          :else [nil nil])]
+                          :else [nil nil])
+           narrowed (when hits (narrow-by-address hits address))
+           narrowed? (and hits (< (count narrowed) (count hits)))
+           level (if narrowed? (keyword (str (name level) "+address")) level)]
        (cond
-         (nil? level) (update acc :unmatched conj q)
-         (= 1 (count hits)) (assoc-in acc [:resolved q]
-                                      (assoc (first hits) :company/name-match level))
-         :else (assoc-in acc [:ambiguous q] {:level level :count (count hits)}))))
+         (nil? level) (update acc :unmatched conj nm)
+         (= 1 (count narrowed)) (assoc-in acc [:resolved nm]
+                                          (assoc (first narrowed) :company/name-match level))
+         :else (assoc-in acc [:ambiguous nm] {:level level :count (count narrowed)}))))
    {:resolved {} :ambiguous {} :unmatched []}
    queries))
 

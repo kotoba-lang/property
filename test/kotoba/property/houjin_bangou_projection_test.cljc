@@ -84,3 +84,43 @@
     (is (= ["JP-13"] (:projection/prefectures m)))
     (is (true? (:projection/latest-only m)))
     (is (= "00_zenkoku_all_20260731" (:source/publish m)) "provenance survives")))
+
+(deftest address-narrows-a-shared-name
+  (let [chuo (rec {:company/houjin-bangou "6010001096659"
+                   :company/legal-name "株式会社うるる"
+                   :company/region "JP-13" :company/city "中央区"})
+        toshou (rec {:company/houjin-bangou "8011701013034"
+                     :company/legal-name "株式会社うるる"
+                     :company/region "JP-12" :company/city "香取郡東庄町"})
+        candidates (-> {} (hp/collect-candidate chuo) (hp/collect-candidate toshou))]
+    (testing "名前だけなら解決しない（2 社が同じ商号を持っている）"
+      (let [r (hp/resolve-names ["株式会社うるる"] candidates)]
+        (is (empty? (:resolved r)))
+        (is (= 2 (get-in r [:ambiguous "株式会社うるる" :count])))))
+    (testing "住所を渡すと県で絞れる。どう決めたかは :company/name-match に残る"
+      (let [r (hp/resolve-names [{:name "株式会社うるる"
+                                  :address "東京都中央区晴海３丁目12番１号"}]
+                                candidates)]
+        (is (= "6010001096659" (get-in r [:resolved "株式会社うるる" :company/houjin-bangou])))
+        (is (= :exact+address (get-in r [:resolved "株式会社うるる" :company/name-match])))))
+    (testing "同じ県に 2 社ある場合は市区町村で絞る"
+      (let [a (rec {:company/houjin-bangou "1" :company/legal-name "株式会社あい"
+                    :company/region "JP-13" :company/city "中央区"})
+            b (rec {:company/houjin-bangou "2" :company/legal-name "株式会社あい"
+                    :company/region "JP-13" :company/city "港区"})
+            c2 (-> {} (hp/collect-candidate a) (hp/collect-candidate b))
+            r (hp/resolve-names [{:name "株式会社あい" :address "東京都港区赤坂一丁目"}] c2)]
+        (is (= "2" (get-in r [:resolved "株式会社あい" :company/houjin-bangou])))))
+    (testing "住所がどの候補とも一致しないなら、絞らずに曖昧なままにする —— 推測しない"
+      (let [r (hp/resolve-names [{:name "株式会社うるる" :address "北海道札幌市中央区"}]
+                                candidates)]
+        (is (empty? (:resolved r)))
+        (is (= 2 (get-in r [:ambiguous "株式会社うるる" :count])))))))
+
+(deftest city-matching-does-not-cut-the-city-name
+  (testing "registry の市区町村は「さいたま市大宮区」「香取郡東庄町」「中央区」が
+            どれも 1 単位。切り出す正規表現はどれかを必ず取り違えるので前方一致"
+    (is (true? (hp/address-in-city? "埼玉県さいたま市大宮区大門町二丁目118番地" "さいたま市大宮区")))
+    (is (true? (hp/address-in-city? "千葉県香取郡東庄町東和田339番地" "香取郡東庄町")))
+    (is (false? (hp/address-in-city? "東京都港区赤坂" "中央区")))
+    (is (false? (hp/address-in-city? nil "中央区")))))
