@@ -188,12 +188,21 @@
 
 (defn manifest
   "この pass が何を読んだかの 1 entity。**projection と一緒に commit する** ——
-   件数だけの projection は、それが全件のうち何かを答えられない。"
-  [{:keys [section rows matched companies observed-at content-sha256 publish]}]
+   件数だけの projection は、それが全件のうち何かを答えられない。
+
+   ⚠ **`:corpus/record-count` は「このファイルに書いた件数」で固定する。**
+   ここは以前**読んだ元ファイルの行数**（section あたり数十万）を入れており、
+   同じ key が dataset によって別のものを指していた（実測 2026-08-20: この面の
+   `:corpus/record-count` を合計すると gbizinfo だけ 1,035,804 になり、ファイルの
+   実体 3,034 と 2 桁以上違った）。**key が 2 つの意味を持つと、それを使う検査は
+   全部不健全になる。** 読んだ行数は `:projection/source-rows` に移した。"
+  [{:keys [section rows matched companies observed-at content-sha256 publish
+           records]}]
   {:corpus/manifest true
    :corpus/section (:key section)
    :corpus/section-label (:label section)
-   :corpus/record-count rows
+   :corpus/record-count records
+   :projection/source-rows rows
    :projection/matched-rows matched
    :projection/company-count companies
    :source/dataset dataset
