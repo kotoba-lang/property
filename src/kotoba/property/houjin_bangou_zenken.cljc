@@ -104,6 +104,37 @@
    "401" :foreign-company          ; 外国会社等
    "499" :other})                  ; その他（健康保険組合・共済組合 等）
 
+(def close-cause-labels
+  "登記記録の閉鎖等の事由（`closeCause`）。
+
+   仕様（`k-resource-dl.pdf`）は 4 つの意味を**番号を添えずに並べる**だけなので、
+   `kind-labels` と同じやり方で 2026-07-31 の全件ファイル自身に当てて確かめた
+   （実測 2026-08-19、5,816,535 行）:
+
+     01  501,684 件  清算の結了等（設立登記法人）
+     11   60,710 件  合併による解散等（設立登記法人）—— 承継先法人番号を伴う
+     21  209,995 件  商業登記規則第 81 条による閉鎖（休眠会社のみなし解散）
+     31    1,407 件  清算の結了等に類する事由（設立登記法人以外）
+
+   裏付けは**承継先を持つ行がほぼ `11` に一致すること**: 承継先を持つ 60,753 件に対し
+   `11` は 60,710 件（実測 2026-08-19）。**「11 だけが持つ」ではない** —— 43 件の例外が
+   在り、そこは未調査。`project_houjin_bangou_closures.cljs` が毎回この 2 つの数を
+   出すので、対応付けが崩れたら気付ける。
+
+   閉鎖は 773,796 件 = 登記の **13%**。官報の解散公告（90 日窓で 5,777 件）とは
+   桁が違うが、**別のことを言っている** —— 官報は「解散を決議した」（手続の入口）、
+   ここは「登記記録が閉じた」（出口）。同じ会社が両方に出る場合、日付は数年離れうる。"
+  {"01" :liquidation-completed
+   "11" :dissolved-by-merger
+   "21" :closed-by-registrar
+   "31" :liquidation-equivalent-non-registered})
+
+(defn closed?
+  "登記記録が閉じているか。**閉鎖日と事由のどちらかでも在れば閉じている**
+   （片方だけ入っている行が実在するため、両方を要求すると見落とす）。"
+  [rec]
+  (boolean (or (:company/closed-at rec) (:company/close-cause rec))))
+
 (def ^:private record-start-re
   ;; Every data row opens with a running number and the 13-digit corporate
   ;; number. A physical line that does not is the continuation of a quoted
