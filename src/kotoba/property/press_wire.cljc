@@ -99,6 +99,73 @@
            :company/name-match (:match hit))
     r))
 
+
+(def ^:private company-card-re
+  ;; PR TIMES のリリースページ末尾にある企業概要カード。tag を落とすと
+  ;;   「業種 情報通信 本社所在地 神奈川県横浜市西区… 電話番号 - 代表者名 …」
+  ;; という固定の並びになる。**代表者名の手前で切る** ので、この経路では
+  ;; 個人名が住所欄に紛れ込みようがない。
+  #"本社所在地\s*[：:]?\s*(.+?)\s*(?:電話番号|代表者名|上場|資本金|設立|URL)")
+
+(def ^:private free-text-address-re
+  ;; カードが無いページ向けの予備。本文の会社概要ブロック。
+  #"(?:所在地|住所)\s*[：:]\s*(.+?)(?:\s*(?:設立|代表|資本金|事業|従業員|URL|TEL|電話|https?://|・|、|。)|$)")
+
+(defn strip-tags [html]
+  (when html
+    (-> (str html)
+        (str/replace #"(?s)<script[^>]*>.*?</script>" " ")
+        (str/replace #"(?s)<style[^>]*>.*?</style>" " ")
+        (str/replace #"<[^>]+>" " ")
+        (str/replace #"&nbsp;" " ")
+        (str/replace #"\s+" " "))))
+
+(def ^:private label-cut-re
+  ;; ラベルは字間を空けて組まれることがある（「代 表：」「上 場：」）。tag を落として
+  ;; 空白を畳んでも空白は 1 つ残るので、`代表` では**当たらない**。実測 2026-08-19、
+  ;; この 1 件で「京都府…655番地 創 業： 1976年12月 上 場： … 代 表：」を住所として
+  ;; 書き出しかけた。字の間に空白を許す形で切る。
+  #"\s*(?:創\s*業|上\s*場|代\s*表|設\s*立|資\s*本\s*金|事\s*業|従\s*業\s*員|電\s*話|所\s*在\s*地|U\s*R\s*L|TEL|https?://).*$")
+
+(defn- clean-address [addr]
+  (when addr
+    (let [a (-> (str addr)
+                (str/replace label-cut-re "")
+                (str/replace #"^〒?\s*[0-9０-９]{3}[-‐ー－]?[0-9０-９]{4}\s*" "")
+                (str/replace #"[・、。]\s*$" "")
+                str/trim)
+          squeezed (str/replace a #"\s" "")]
+      (when (and (>= (count a) 4)
+                 (re-find #"(都|道|府|県)" a)
+                 ;; 個人名・役職が混ざったものは住所として採らない（捨てる方を選ぶ）。
+                 ;; 判定は空白を除いてから行う —— 空白入りの組版に負けないため。
+                 (not (re-find #"代表|取締役|社長|理事|部長|設立|資本金" squeezed)))
+        a))))
+
+(defn issuer-address
+  "リリースページから発表者の**所在地だけ**を取る。
+
+   同じブロックに「代表者名 上田英介」が並ぶが、**取らない** —— gbizinfo/basic-record
+   や官報の発注機関と同じ線で、公表物であっても個人名は持ち歩かない。ここで欲しいのは、
+   同名 2 社を分ける都道府県だけである。`clean-address` は役職語を含む候補を
+   救おうとせず捨てる —— 名前が 1 件混じるより住所が 1 件足りない方がよい。"
+  [html]
+  (when-let [t (strip-tags html)]
+    (or (clean-address (second (re-find company-card-re t)))
+        (clean-address (second (re-find free-text-address-re t))))))
+
+(defn issuer-company-id
+  "リリース URL に既に入っている PR TIMES の企業 ID。
+
+   `…/rd/p/000000136.000143568.html` の後半 `000143568` が
+   `prtimes.jp/main/html/searchrlp/company_id/143568` と同じ ID。つまり
+   **発表者の同一性はフィードだけで分かる** —— 名寄せのために 1 ページも取る
+   必要がない（住所を取りに行くのは、法人番号に結び付けるときだけ）。"
+  [url]
+  (when url
+    (when-let [m (re-find #"/rd/p/\d+\.(\d+)\.html" (str url))]
+      (str/replace (second m) #"^0+" ""))))
+
 (defn corpus-manifest
   [{:keys [observed-at distributor record-count seen linked sample-items]}]
   (cond-> {:corpus/manifest true

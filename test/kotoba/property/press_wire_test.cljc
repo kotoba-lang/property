@@ -59,3 +59,24 @@
     (testing "robots.txt で feed を禁じている配信サイトは登録しない"
       (is (nil? (:valuepress pw/distributors)))
       (is (nil? (:dreamnews pw/distributors))))))
+
+(deftest issuer-company-id-comes-from-the-url
+  ;; 発表者の同一性はフィードだけで分かる（ページを取りに行く必要がない）。
+  (is (= "143568" (pw/issuer-company-id "https://prtimes.jp/main/html/rd/p/000000136.000143568.html")))
+  (is (nil? (pw/issuer-company-id "https://example.com/news/1")))
+  (is (nil? (pw/issuer-company-id nil))))
+
+(deftest issuer-address-takes-the-place-and-not-the-person
+  (let [card "<div>業種 情報通信 <b>本社所在地</b> 神奈川県横浜市西区北幸一丁目５番１０号 JPR横浜ビル 電話番号 - 代表者名 上田英介 上場 未上場</div>"]
+    (is (= "神奈川県横浜市西区北幸一丁目５番１０号 JPR横浜ビル" (pw/issuer-address card))))
+  ;; 本文の会社概要ブロック（カードが無いページ）。〒 は落とす。
+  (is (= "東京都千代田区麹町3-5-17 晴花ビル"
+         (pw/issuer-address "<p>所在地：〒102-0083 東京都千代田区麹町3-5-17 晴花ビル 設立：2021年4月</p>")))
+  ;; ラベルは字間を空けて組まれることがある。`代表` で切れると人名を住所として
+  ;; 書き出してしまう（実測 2026-08-19、この 1 件で危うく漏らした）。
+  (is (= "京都府京都市下京区因幡堂町655番地"
+         (pw/issuer-address "<p>所在地：京都府京都市下京区因幡堂町655番地 創 業： 1976年12月 上 場： 東証プライム 代 表： 近藤 雅彦</p>")))
+  ;; 都道府県が無いもの、役職が残るものは救わずに捨てる。
+  (is (nil? (pw/issuer-address "<p>所在地：本社ビル</p>")))
+  (is (nil? (pw/issuer-address "<p>代表者：代表取締役 山田太郎</p>")))
+  (is (nil? (pw/issuer-address nil))))
