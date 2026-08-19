@@ -8,11 +8,19 @@
    192 名中 119 = 62%）。同名 2 社は**ほとんどの場合、県が違う**ので、住所が 1 つ
    あれば `houjin-bangou-projection/resolve-names` が分けられる。
 
-   ## 1 発表者につき 1 ページしか取らない
+   ## 1 発表者につき 1 ページしか取らない、しかも 1 度だけ
 
    未解決の発表者だけを対象に、その発表者のリリースを 1 本だけ取る。同じ会社の
    リリースを何本も取っても住所は増えない。取得間隔も空ける —— 相手のサーバに
    対する礼儀であり、この収集の速さは要件ではない。
+
+   さらに `--attempts` の台帳に「いつ試したか」を残し、**同じ発表者を毎日
+   取りに行かない**。住所を取っても名寄せできない発表者は必ず残る（実測
+   2026-08-19: 91 件の住所のうち 31 が同名で割れ、58 が corpus に見つからない）。
+   台帳が無ければ、その 122 社をこの先ずっと毎日取りに行くことになる。
+
+   ただし**永久に諦めない** —— 法人番号 corpus は月次で更新され、商号変更や
+   新設で解決するようになる。`--retry-days`（既定 60）を過ぎたものは再び対象。
 
    ## 代表者名は取らない
 
@@ -21,7 +29,8 @@
 
    usage:
      nbb -cp src scripts/enrich_press_issuers.cljs --records <press-wire.edn>
-       --out <name-address.tsv> [--limit N] [--delay-ms 800]"
+       --out <name-address.tsv> [--attempts <ledger.edn>] [--retry-days 60]
+       [--limit N] [--delay-ms 800]"
   (:require [cljs.reader :as reader]
             [clojure.string :as str]
             [kotoba.property.press-wire :as pw]
@@ -61,9 +70,20 @@
           {}
           records))
 
+(defn- read-attempts [f]
+  (if (and f (.existsSync fs f))
+    (or (try (reader/read-string (.readFileSync fs f "utf8")) (catch :default _ nil)) {})
+    {}))
+
+(defn- days-since [iso now-ms]
+  (let [t (.parse js/Date (str iso))]
+    (if (js/isNaN t) 1e9 (/ (- now-ms t) 86400000))))
+
 (defn -main []
   (let [records-file (arg "--records" nil)
         out (arg "--out" nil)
+        attempts-file (arg "--attempts" nil)
+        retry-days (js/parseFloat (arg "--retry-days" "60"))
         limit (js/parseInt (arg "--limit" "0") 10)
         delay-ms (js/parseInt (arg "--delay-ms" "800") 10)]
     (when-not (and records-file out)
@@ -75,10 +95,18 @@
                        (keep #(try (reader/read-string %) (catch :default _ nil)))
                        vec)
           pending (unresolved-issuers records)
-          pairs (cond->> (vec (vals pending)) (pos? limit) (take limit))
+          now-ms (.now js/Date)
+          attempts (read-attempts attempts-file)
+          due (into {} (remove (fn [[id _]]
+                                 (when-let [at (get attempts id)]
+                                   (< (days-since at now-ms) retry-days)))
+                               pending))
+          pairs (cond->> (vec (vals due)) (pos? limit) (take limit))
+          picked-ids (set (map key (cond->> (vec due) (pos? limit) (take limit))))
           state (atom {:fetched 0 :with-address 0})
           rows (atom [])]
-      (println (str "  " (count pending) " unresolved issuer(s) by company-id, fetching " (count pairs)))
+      (println (str "  " (count pending) " unresolved issuer(s) by company-id, "
+                    (- (count pending) (count due)) " tried within " retry-days "d, fetching " (count pairs)))
       (-> (reduce
            (fn [p [nm url]]
              (.then p (fn [_]
@@ -95,8 +123,15 @@
            pairs)
           (.then
            (fn [_]
-             (let [{:keys [fetched with-address]} @state]
+             (let [{:keys [fetched with-address]} @state
+                   stamp (.toISOString (js/Date.))]
                (.writeFileSync fs out (str/join "\n" @rows) "utf8")
+               ;; 台帳は「住所が取れたか」ではなく「取りに行ったか」を記録する。
+               ;; 取れなかった相手を明日また叩かないことがここの目的。
+               (when attempts-file
+                 (.writeFileSync fs attempts-file
+                                 (pr-str (reduce #(assoc %1 %2 stamp) attempts picked-ids))
+                                 "utf8"))
                (println (pr-str {:out out :issuers (count pairs)
                                  :fetched fetched :with-address with-address
                                  :hit-rate (when (pos? fetched)
