@@ -384,9 +384,13 @@ disallows `/rss/`, so its feed is not used**, and DreamNews' robots.txt answers
 503 — permission unverifiable, so it is not used either. 共同通信PRワイヤー and
 @Press welcome crawlers but expose no feed to discover.
 
-Measured 2026-08-19: the feed's 200 items span **6.8 days** (~29/day), so it is a
-curated stream rather than the full firehose — and that window, not a guess, is
-what sets the polling interval. Of 192 distinct issuers, **119 (62%) resolve to a
+Measured 2026-08-19, and the first measurement was wrong: one snapshot's 200
+items spanned 6.8 days, which read like a window — but two fetches five seconds
+apart are identical while two a few minutes apart differ by 129–165 items, and a
+later snapshot spanned 28 days. **The feed is a rotating sample of roughly the
+last month, not the newest 200**, so no per-day rate and no polling interval can
+be derived from it. Daily is chosen for politeness and diminishing returns; every
+poll adds roughly 130–165 releases the store has not seen. Of 192 distinct issuers, **119 (62%) resolve to a
 unique 法人番号** by name alone; the feed carries no address, so that is the
 ceiling for this join. Unresolved issuers are kept with their name: a
 distributor's byline is a brand or trading name as often as a registered one.
