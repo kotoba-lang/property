@@ -155,6 +155,37 @@
                  (merge base named)
                  fields))))
 
+(defn summary-manifest
+  "畳んだ側（government summary）の 1 entity。
+
+   **畳んだ projection は、畳む前が何行だったかを自分では答えられない。** 実測
+   2026-08-19、この summary ファイルは manifest 行を 1 本も持っておらず、
+   2,358 件の集計が「125,144 行を畳んだ結果」であることがファイルから読めなかった
+   （出所・ライセンス・観測時刻も無い）。件数だけの projection が全件のうち何かを
+   答えられないのと同じ欠陥で、畳んだ側では**分母が 2 つ**要る:
+   何社に畳んだか（`:projection/company-count`）と、何行を畳んだか
+   （`:projection/folded-rows`）。
+
+   section ごとの `:source/content-sha256` はここには複製しない —— 同じ pass の
+   もう一方のファイルに在り、複製すれば必ず片方だけ古くなる。代わりに
+   `:corpus/sha256-recorded-in` でその名前を指す。**この key は検査器が読む**
+   （`verify-projections.cljs` が、指された兄弟ファイルが実在し section を
+   網羅していることを確かめる）—— 誰も読まない key は、機能が在るという嘘になる。"
+  [{:keys [summaries folded-rows companies sections observed-at publishes joined-file]}]
+  {:corpus/manifest true
+   :corpus/summarised true
+   :corpus/record-count summaries
+   :projection/folded-rows folded-rows
+   :projection/company-count companies
+   :corpus/sections (vec sections)
+   :corpus/sha256-recorded-in joined-file
+   :source/dataset dataset
+   :source/authority authority-id
+   :source/licence licence
+   :source/attribution attribution
+   :source/observed-at observed-at
+   :source/publish (vec publishes)})
+
 (defn manifest
   "この pass が何を読んだかの 1 entity。**projection と一緒に commit する** ——
    件数だけの projection は、それが全件のうち何かを答えられない。"
