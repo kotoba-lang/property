@@ -363,6 +363,37 @@ garbage first:
   to the name. Splitting on a prefecture name too took resolution from 131 to
   254.
 
+## Press releases from the distributors (PR TIMES)
+
+Only 41 of the 1,040 companies we track publish a feed on their own site; in
+Japan press releases collect on distributors. This reads the distributor's own
+public feed and keeps the citation, not the release:
+
+```bash
+nbb -cp src scripts/collect_press_wire.cljs --out <repo>/data/press-wire.datoms.edn \
+  --names-out /tmp/issuers.txt                       # then resolve the names…
+nbb -cp src scripts/project_houjin_bangou_corpus.cljs --corpus <c> \
+  --name-file /tmp/issuers.txt --latest-only --report /tmp/res.edn --out /tmp/scratch.edn
+nbb -cp src scripts/collect_press_wire.cljs --out <repo>/data/press-wire.datoms.edn \
+  --report /tmp/res.edn                              # …and link them
+```
+
+**robots.txt was read before any of this.** PR TIMES allows crawling (`Allow: /`,
+three narrow exclusions) and publishes RSS 1.0 at `/index.rdf`. **ValuePress
+disallows `/rss/`, so its feed is not used**, and DreamNews' robots.txt answers
+503 — permission unverifiable, so it is not used either. 共同通信PRワイヤー and
+@Press welcome crawlers but expose no feed to discover.
+
+Measured 2026-08-19: the feed's 200 items span **6.8 days** (~29/day), so it is a
+curated stream rather than the full firehose — and that window, not a guess, is
+what sets the polling interval. Of 192 distinct issuers, **119 (62%) resolve to a
+unique 法人番号** by name alone; the feed carries no address, so that is the
+ceiling for this join. Unresolved issuers are kept with their name: a
+distributor's byline is a brand or trading name as often as a registered one.
+
+**The release body is not stored** — only title, URL, date and issuer. The text
+belongs to the issuer; this is the same `fair-use-quote` line newsfeed draws.
+
 ## Who owns whom (Level 2 / RR)
 
 Level 1 says who a legal entity is. It carries no edge, so no Level 1
