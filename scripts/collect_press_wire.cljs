@@ -80,7 +80,7 @@
                                             :record-count (count all)
                                             :seen (count items)
                                             :linked (count (filter :company/houjin-bangou all))
-                                            :window-items (:window-items dist)}))
+                                            :sample-items (:sample-items dist)}))
                                   "\n"
                                   (str/join "\n" (map pr-str all)) "\n")
                              "utf8")

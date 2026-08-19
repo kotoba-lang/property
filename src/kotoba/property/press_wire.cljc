@@ -7,6 +7,13 @@
    （`kotoba.property.web-presence`）。日本のプレスリリースは PR TIMES 等の配信
    サイトに集まるので、残り 96% はそちらでしか拾えない。
 
+   ## フィードは窓ではなく標本
+
+   `index.rdf` は 200 件を返すが、それは「最新 200 件」ではない —— 数分あけて
+   取り直すと 129〜165 件が入れ替わり、1 回が張る期間も 6.8 日〜28 日と動く。
+   したがって**全リリースを網羅することはできない**し、「1 日 N 件」という率も
+   このフィードからは出せない。貯まるのは増え続ける標本である。
+
    ## 何を保存して、何を保存しないか
 
    保存するのは**引用の形**だけ —— 見出し・URL・配信日時・発表者名。
@@ -33,10 +40,15 @@
              :feed-url "https://prtimes.jp/index.rdf"
              :authority "JP/PR-TIMES"
              :attribution "出典：PR TIMES（株式会社PR TIMES）https://prtimes.jp/ の公開 RSS を加工して作成"
-             ;; feed は最新 200 件しか持たない。PR TIMES の 1 日の配信量はその
-             ;; 数倍あるので、**1 日 1 回では取りこぼす** —— この数字が cell の
-             ;; 間隔を決める（間隔を決める前に、まず窓の大きさを測る）。
-             :window-items 200}})
+             ;; **窓ではなく標本である。** 実測 2026-08-19:
+             ;;   - 5 秒あけた 2 回の取得は 200/200 完全一致（瞬間的には安定）
+             ;;   - 数分あけると 129〜165 件が入れ替わる
+             ;;   - 1 回の取得が張る期間は 6.8 日だったり 28 日だったりする
+             ;; つまり `index.rdf` は「最新 200 件」ではなく**直近 1 ヶ月ほどからの
+             ;; 回転する標本**で、ここから「1 日あたり何件」は出せない。巡回間隔を
+             ;; 窓の広さから導けないので、**礼儀と逓減する取り分**で日次にしている。
+             ;; 毎回およそ 130〜165 件が新規なので、貯めれば標本は増え続ける。
+             :sample-items 200}})
 
 (defn- tag [block name]
   (some-> (re-find (re-pattern (str "<" name "[^>]*>([\\s\\S]*?)</" name ">")) block)
@@ -88,7 +100,7 @@
     r))
 
 (defn corpus-manifest
-  [{:keys [observed-at distributor record-count seen linked window-items]}]
+  [{:keys [observed-at distributor record-count seen linked sample-items]}]
   (cond-> {:corpus/manifest true
            :corpus/projection true
            :corpus/format :edn-lines
@@ -97,7 +109,7 @@
            :source/attribution (:attribution distributor)
            :source/observed-at observed-at
            :press/distributor (:id distributor)}
-    window-items (assoc :corpus/window-items window-items)
+    sample-items (assoc :corpus/sample-items sample-items)
     seen (assoc :projection/seen seen)
     linked (assoc :projection/linked linked)
     record-count (assoc :corpus/record-count record-count)))

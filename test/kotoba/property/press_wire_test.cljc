@@ -52,8 +52,10 @@
 (deftest distributors-record-why-each-one-is-used
   (let [p (:prtimes pw/distributors)]
     (is (= "https://prtimes.jp/index.rdf" (:feed-url p)))
-    (testing "窓の広さを持っておく — 巡回間隔はここから決まる"
-      (is (= 200 (:window-items p))))
+    (testing "返る件数は持つが、それを窓と呼ばない — 数分で 129〜165 件入れ替わる
+              標本なので、ここから巡回間隔も 1 日あたりの件数も導けない"
+      (is (= 200 (:sample-items p)))
+      (is (nil? (:window-items p))))
     (testing "robots.txt で feed を禁じている配信サイトは登録しない"
       (is (nil? (:valuepress pw/distributors)))
       (is (nil? (:dreamnews pw/distributors))))))
