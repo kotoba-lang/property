@@ -52,7 +52,15 @@
         out (arg-value args "--out" nil)
         report-file (arg-value args "--report" nil)
         numbers (read-lines (arg-value args "--number-file" nil))
-        names (read-lines (arg-value args "--name-file" nil))
+        ;; 1 行 1 名。TAB があれば 名前<TAB>住所 として読み、同名で割れたときの
+        ;; 絞り込みに使う（住所を渡さなければ従来どおり名前だけの照合）。
+        queries (mapv (fn [l]
+                        (let [[nm addr] (str/split l #"\t" 2)]
+                          (if (str/blank? (str addr))
+                            (str/trim nm)
+                            {:name (str/trim nm) :address (str/trim addr)})))
+                      (or (read-lines (arg-value args "--name-file" nil)) []))
+        names (mapv (fn [q] (if (map? q) (:name q) q)) queries)
         name-keys (into #{} (comp (mapcat (juxt hb/normalize-name hb/name-core))
                                   (remove nil?))
                         names)
@@ -166,7 +174,7 @@
       (.on rl "close"
            (fn []
              (let [{:keys [candidates]} @state
-                   resolution (when (seq names) (hp/resolve-names names candidates))]
+                   resolution (when (seq queries) (hp/resolve-names queries candidates))]
                (doseq [rec (vals (:resolved resolution))] (write! rec))
                (.end sink (fn [] (finish! resolution))))))
       nil)))
