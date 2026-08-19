@@ -136,3 +136,18 @@
 (deftest an-anonymised-individual-stays-out
   (doseq [nm ["個人イ" "日系人Ｊ" "媒体Ａ" "職員Ｆ（ガボン）"]]
     (is (not= :organisation (gr/classify nm nil)) (str "kept: " nm))))
+
+(deftest the-fold-keeps-the-largest-programme-name
+  ;; 畳むと事業名が全部消え、jGrants（公募）と突き合わせる鍵が面から無くなる
+  ;; （実測 2026-08-19: プレーン上で :grant/title は nil だった）。
+  ;; 代表 1 つだけ残す —— **唯一の事業ではない**（件数は :review/programs）。
+  (let [rows [{:company/houjin-bangou "1111111111111" :grant/ministry "文部科学省"
+               :grant/title "小さい事業" :grant/amount-million-jpy "3"}
+              {:company/houjin-bangou "1111111111111" :grant/ministry "文部科学省"
+               :grant/title "大きい事業" :grant/amount-million-jpy "300"}
+              {:company/houjin-bangou "1111111111111" :grant/ministry "文部科学省"
+               :grant/title "読めない事業" :grant/amount-million-jpy "-"}]
+        [f] (gr/fold-recipients rows)]
+    (is (= "大きい事業" (:review/largest-program f)))
+    (is (= 3 (:review/programs f)) "代表は 1 つでも、件数は全部を数える")
+    (is (= "303.0" (:review/total-million-jpy f)))))
