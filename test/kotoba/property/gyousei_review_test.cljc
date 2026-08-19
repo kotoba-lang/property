@@ -100,3 +100,18 @@
       ;; 読めなかった行は合計を持たず、件数として残る。
       (is (= 1 (:review/amount-unparsed b)))
       (is (nil? (:review/total-million-jpy b))))))
+
+(deftest the-folded-name-is-the-commonest-variant-and-says-so
+  ;; シートは同じ法人番号に対して表記を揺らす。最初の 1 つを代表にすると、
+  ;; 読み手は合計をその表記の主体に帰属させる（実測 2026-08-19: 市の合計
+  ;; 209,456 百万円が「市立札幌病院」の額に見えた。明細では 0.6 百万円）。
+  (let [rows [{:company/houjin-bangou "1111111111111" :grant/ministry "厚生労働省"
+               :grant/recipient-name "札幌市 市立札幌病院" :grant/title "A" :grant/amount-million-jpy "0.6"}
+              {:company/houjin-bangou "1111111111111" :grant/ministry "厚生労働省"
+               :grant/recipient-name "札幌市" :grant/title "B" :grant/amount-million-jpy "100"}
+              {:company/houjin-bangou "1111111111111" :grant/ministry "厚生労働省"
+               :grant/recipient-name "札幌市" :grant/title "C" :grant/amount-million-jpy "50"}]
+        [f] (gr/fold-recipients rows)]
+    (is (= "札幌市" (:company/legal-name f)) "最も多く現れた表記")
+    (is (= 2 (:review/name-variants f)) "表記が 1 つでないことを数で言う")
+    (is (= "150.6" (:review/total-million-jpy f)))))
