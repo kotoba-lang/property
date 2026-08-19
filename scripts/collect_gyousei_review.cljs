@@ -18,6 +18,8 @@
    usage:
      nbb -cp src scripts/collect_gyousei_review.cljs --xlsx <file> --out <o> [--year 2024]
        [--dropped-out <f>]   組織だと言えず落とした名前（規則の点検用）
+       [--numbers <f>]       面が持つ法人番号だけに絞る
+       [--fold]              会社 × 府省に畳む（面に置く形。明細は corpus に残る）
      nbb -cp src scripts/collect_gyousei_review.cljs --download --out <o>"
   (:require [clojure.string :as str]
             [kotoba.property.gyousei-review :as gr]
@@ -136,6 +138,8 @@
           (.writeFileSync fs df (str/join "\n" names) "utf8")
           (println (str "  wrote " (count names) " distinct dropped name(s) -> " df))))
       (let [{:keys [programs seen dropped records kept-all]} @state
+            ;; `--fold` で会社 × 府省に畳む（面に置くのはこちら。明細は corpus）。
+            records (if (flag? "--fold") (gr/fold-recipients records) records)
             with-hb (count (filter :company/houjin-bangou records))
             manifest (gr/corpus-manifest {:observed-at (.toISOString (js/Date.))
                                           :record-count (count records)
@@ -145,6 +149,8 @@
                                           :queried (count (or wanted #{}))
                                           :dropped-individuals dropped
                                           :with-houjin-bangou with-hb
+                                          :folded-from (when (flag? "--fold")
+                                                         (count (:records @state)))
                                           :publish (.basename path xlsx)
                                           :source-url source-page})]
         (when (zero? (count records))

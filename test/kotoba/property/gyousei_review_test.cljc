@@ -68,3 +68,35 @@
     (is (= "database240918.xlsx" (:source/publish m)))
     (doseq [k [:source/authority :source/licence :source/attribution]]
       (is (not (str/blank? (str (get m k))))))))
+
+(deftest amounts-that-cannot-be-read-are-not-zero
+  ;; 0 を足すと「支出が無かった」と「読めなかった」が同じ合計になる。
+  (is (= 1234.0 (gr/parse-amount "1,234")))
+  (is (= 0.5 (gr/parse-amount "0.5")))
+  (doseq [bad ["-" "－" "" "※" nil]]
+    (is (nil? (gr/parse-amount bad)) (str "parsed: " (pr-str bad)))))
+
+(deftest the-fold-keeps-the-denominators-it-folded
+  (let [rows [{:company/houjin-bangou "1111111111111" :grant/ministry "内閣官房"
+               :grant/title "A事業" :grant/recipient-name "株式会社甲"
+               :grant/amount-million-jpy "10" :grant/fiscal-year "2024"}
+              {:company/houjin-bangou "1111111111111" :grant/ministry "内閣官房"
+               :grant/title "B事業" :grant/recipient-name "株式会社甲"
+               :grant/amount-million-jpy "5.5"}
+              {:company/houjin-bangou "1111111111111" :grant/ministry "総務省"
+               :grant/title "C事業" :grant/recipient-name "株式会社甲"
+               :grant/amount-million-jpy "-"}
+              ;; 法人番号の無い行は畳まない（join できないので面に置く意味が無い）。
+              {:company/legal-name "どこかの協議会" :grant/ministry "総務省"
+               :grant/title "D事業" :grant/amount-million-jpy "3"}]
+        folded (gr/fold-recipients rows)]
+    (is (= 2 (count folded)) "会社 × 府省")
+    (let [a (first (filter #(= "内閣官房" (:grant/ministry %)) folded))
+          b (first (filter #(= "総務省" (:grant/ministry %)) folded))]
+      (is (= 2 (:review/payments a)))
+      (is (= 2 (:review/programs a)))
+      (is (= "15.5" (:review/total-million-jpy a)))
+      (is (nil? (:review/amount-unparsed a)))
+      ;; 読めなかった行は合計を持たず、件数として残る。
+      (is (= 1 (:review/amount-unparsed b)))
+      (is (nil? (:review/total-million-jpy b))))))
