@@ -99,7 +99,7 @@
                                           (when-let [r (gr/recipient-column name*)]
                                             [col r]))
                                         header))
-          state (atom {:programs 0 :seen 0 :dropped 0 :records [] :dropped-names [] :kept-all 0})]
+          state (atom {:programs 0 :seen 0 :dropped 0 :records [] :dropped-names [] :kept-all 0 :placeholder 0})]
       (when (empty? col->recipient)
         (js/console.error "collect-gyousei-review: no 支出先 columns in the header — the workbook layout changed")
         (js/process.exit 2))
@@ -121,8 +121,13 @@
           (doseq [[[block rank] fields] groups
                   :when (not (str/blank? (str (:name fields))))]
             (swap! state update :seen inc)
-            (if-let [rec (gr/recipient-record {:program program :block block :rank rank
-                                               :fields fields :publish (.basename path xlsx)})]
+            ;; 相手が書かれていない欄は**別に数える** —— 個人を守って落とした数と
+            ;; 混ぜると、規則の厳しさも記入漏れの多さも分からなくなる。
+            (when (gr/placeholder? (:name fields))
+              (swap! state update :placeholder inc))
+            (if-let [rec (and (not (gr/placeholder? (:name fields)))
+                              (gr/recipient-record {:program program :block block :rank rank
+                                                    :fields fields :publish (.basename path xlsx)}))]
               (do (swap! state update :kept-all inc)
                   (when (or (nil? wanted)
                             (contains? wanted (:company/houjin-bangou rec)))
@@ -130,15 +135,16 @@
               ;; **落としたものは数えるだけでなく見られるようにする。**
               ;; 「組織だと言えなかった」は規則の判断であって事実ではないので、
               ;; 判断を後から点検できないと規則を直せない。
-              (swap! state (fn [st]
-                             (-> st
-                                 (update :dropped inc)
-                                 (update :dropped-names conj (str (:name fields))))))))))
+              (when-not (gr/placeholder? (:name fields))
+                (swap! state (fn [st]
+                               (-> st
+                                   (update :dropped inc)
+                                   (update :dropped-names conj (str (:name fields)))))))))))
       (when-let [df (arg "--dropped-out" nil)]
         (let [names (sort (distinct (:dropped-names @state)))]
           (.writeFileSync fs df (str/join "\n" names) "utf8")
           (println (str "  wrote " (count names) " distinct dropped name(s) -> " df))))
-      (let [{:keys [programs seen dropped records kept-all]} @state
+      (let [{:keys [programs seen dropped records kept-all placeholder]} @state
             ;; `--fold` で会社 × 府省に畳む（面に置くのはこちら。明細は corpus）。
             records (if (flag? "--fold") (gr/fold-recipients records) records)
             with-hb (count (filter :company/houjin-bangou records))
@@ -147,6 +153,7 @@
                                           :programs programs
                                           :recipients-seen seen
                                           :organisations-seen kept-all
+                                          :placeholder-rows placeholder
                                           :queried (count (or wanted #{}))
                                           :dropped-individuals dropped
                                           :with-houjin-bangou with-hb
@@ -166,6 +173,7 @@
                           :organisations kept-all
                           :kept (count records) :with-houjin-bangou with-hb
                           :dropped-not-organisation dropped
+                          :placeholder-rows placeholder
                           :bytes (.-size (.statSync fs out))}))))))
 
 (-main)

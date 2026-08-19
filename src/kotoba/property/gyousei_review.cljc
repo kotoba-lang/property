@@ -65,18 +65,29 @@
       ;; 隠す名前になりやすい）。
       (when f {:block block :rank (parse-rank seq*) :field f}))))
 
+(def placeholder-re
+  "**支出先ではない記入**。シートには「【なし】」「【調査中】」「〃」「○○」
+   「↑昨年のままとなっています」のような欄が実在する（実測 2026-08-19、
+   落とした 2,446 名を分類して出てきた）。
+
+   これを「組織と言えないので落とした」に混ぜると、**個人を守って落とした数**と
+   **そもそも相手が書かれていない数**が同じ数字になる。分けて数える。"
+  ;; 「その他」「その他（多数）」も相手ではなく**まとめ欄**である（実測 2026-08-19）。
+  #"^(【?(なし|無し|該当なし|調査中|未定|非公表)】?|〃|同上|その他(（[^）]*）)?|○+|●+|-+|―+|ー+|\s*)$|昨年のまま|記入|↑")
+
+(defn placeholder? [s] (boolean (re-find placeholder-re (str/trim (str s)))))
+
 (def organization-marker-re
   ;; インラインの `(?i)` を書かない（JS が `Invalid group` で落ちる）。小文字化して当てる。
   ;;
-  ;; ⚠ **最初の版は法人格の語だけを見て 13,669 件を落とした。** 出力を点検したら
-  ;; 個人ではなく「協議会」「センター」「委員会」「法務局」「海外法人」ばかりで、
-  ;; 規則が厳しすぎた（実測 2026-08-19、`--dropped-out` を足して初めて見えた）。
-  ;; **落とした物を見られるようにしていなければ、13,669 件の欠落は数字のままだった。**
-  #"株式会社|株式會社|有限会社|合同会社|合資会社|合名会社|相互会社|一般社団法人|公益社団法人|一般財団法人|公益財団法人|医療法人|学校法人|宗教法人|社会福祉法人|特定非営利活動法人|npo法人|独立行政法人|国立研究開発法人|国立大学法人|公立大学法人|地方独立行政法人|協同組合|事業協同組合|農業協同組合|漁業協同組合|信用金庫|信用組合|連合会|振興会|協議会|委員会|審議会|機構|公社|公団|事業団|基金|センター|研究所|研究センター|試験場|事務所|法務局|財務局|運輸局|気象台|保健所|病院|大学|高等専門学校|学校|協会|財団|社団|組合|市$|町$|村$|都$|道$|府$|県$|区$|[a-z]")
+  ;; ⚠ **2 度広げている。** 最初は法人格の語だけで 13,669 行を落とし、中身は
+  ;; 協議会・センター・法務局だった。2 度目（実測 2026-08-19、残り 2,446 名の分類）で
+  ;; **官公署 244・共同企業体/JV/共同提案体 217・学校 49** がまだ落ちているのが見えた。
+  ;; **落とした物を毎回見ない限り、規則は静かに狭いまま。**
+  #"株式会社|株式會社|有限会社|合同会社|合資会社|合名会社|相互会社|一般社団法人|公益社団法人|一般財団法人|公益財団法人|医療法人|学校法人|宗教法人|社会福祉法人|特定非営利活動法人|npo法人|独立行政法人|国立研究開発法人|国立大学法人|公立大学法人|地方独立行政法人|協同組合|事業協同組合|農業協同組合|漁業協同組合|信用金庫|信用組合|連合会|振興会|協議会|委員会|審議会|機構|公社|公団|事業団|基金|センター|研究所|研究センター|試験場|事務所|法務局|財務局|運輸局|気象台|保健所|病院|大学|学園|高等専門学校|学校|協会|財団|社団|組合|共同企業体|共同提案体|共同体|コンソーシアム|プロジェクトチーム|連携会議|ｊｖ|jv|省$|庁$|局$|署$|部$|課$|裁判所|検察庁|大使館|領事館|市$|町$|村$|都$|道$|府$|県$|区$|[a-z]")
 
-(def person-name-re
+(def ^:private person-name-re
   ;; 逆向きの安全弁: **人名の形をしているものは、marker に当たっても落とす。**
-  ;; 「姓 名」（漢字 2〜4 + 空白 + 漢字 1〜4）で、組織語を含まないもの。
   #"^[一-龥]{2,4}[\s　]+[一-龥]{1,4}$")
 
 (defn organization?
@@ -91,6 +102,15 @@
 (defn- clean [s]
   (let [v (-> (str s) (str/replace #"[\s　]+" " ") str/trim)]
     (when-not (or (str/blank? v) (= "-" v) (= "－" v)) v)))
+
+(defn classify
+  "支出先の名前を 3 つに分ける: `:organisation` / `:placeholder`（相手が書かれて
+   いない欄）/ `:not-organisation`（個人か、組織だと言えないもの）。"
+  [name houjin-bangou]
+  (cond
+    (placeholder? name) :placeholder
+    (organization? name houjin-bangou) :organisation
+    :else :not-organisation))
 
 (defn recipient-record
   "1 支出先 -> 1 レコード。組織だと言えないものは nil（推測しない）。"
@@ -185,7 +205,7 @@
 (defn corpus-manifest
   [{:keys [observed-at record-count programs recipients-seen dropped-individuals
            with-houjin-bangou publish source-url organisations-seen queried
-           folded-from]}]
+           folded-from placeholder-rows]}]
   (cond-> {:corpus/manifest true
            :corpus/projection true
            :corpus/format :edn-lines
@@ -203,6 +223,9 @@
     ;; 絞る前に何件が組織として残ったか、そして何番号で絞ったか。**この 2 つが
     ;; 無いと、絞った結果が「国の支出先はこれで全部」に読める。**
     organisations-seen (assoc :projection/organisations-seen organisations-seen)
+    ;; 相手が書かれていない欄（「【なし】」「〃」「調査中」）。**個人を守って落とした
+    ;; 数と分ける** —— 混ぜると規則の厳しさも記入漏れの多さも読めない。
+    placeholder-rows (assoc :projection/placeholder-rows placeholder-rows)
     (pos? (or queried 0)) (assoc :projection/queried queried)
     with-houjin-bangou (assoc :projection/with-houjin-bangou with-houjin-bangou)
     (some? dropped-individuals) (assoc :projection/dropped-not-organisation dropped-individuals)

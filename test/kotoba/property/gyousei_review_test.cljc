@@ -117,3 +117,22 @@
     (is (= "札幌市" (:company/legal-name f)) "最も多く現れた表記")
     (is (= 2 (:review/name-variants f)) "表記が 1 つでないことを数で言う")
     (is (= "150.6" (:review/total-million-jpy f)))))
+
+(deftest placeholders-are-not-refusals
+  ;; 「相手が書かれていない」と「個人だから載せない」を同じ数字にしない
+  ;; （実測 2026-08-19、落とした 2,446 名を分類して初めて見えた）。
+  (doseq [p ["【なし】" "なし" "【調査中】" "〃" "同上" "○○" "―" "  " "↑昨年のままとなっています"]]
+    (is (= :placeholder (gr/classify p nil)) (str "not placeholder: " p)))
+  (is (= :organisation (gr/classify "株式会社なんとか" nil)))
+  (is (= :not-organisation (gr/classify "山田 太郎" nil))))
+
+(deftest the-rule-now-reaches-offices-and-joint-ventures
+  ;; 2 度目の点検で落ちていた 3 類型（官公署 244 / JV・共同提案体 217 / 学校 49）。
+  (doseq [nm ["厚生労働省年金局" "山形地方法務局" "名古屋高等検察庁"
+              "不二・村井　経常ＪＶ" "日本工営・コーエイリサーチ共同提案体"
+              "「世界文化遺産」地域連携会議・斑鳩プロジェクトチーム" "○○学園"]]
+    (is (= :organisation (gr/classify nm nil)) (str "still dropped: " nm))))
+
+(deftest an-anonymised-individual-stays-out
+  (doseq [nm ["個人イ" "日系人Ｊ" "媒体Ａ" "職員Ｆ（ガボン）"]]
+    (is (not= :organisation (gr/classify nm nil)) (str "kept: " nm))))
