@@ -168,6 +168,16 @@
                    (-> acc
                        (update-in [k :payments] (fnil inc 0))
                        (update-in [k :programs] (fnil conj #{}) (:grant/title r))
+                       ;; **最大の 1 事業だけ名前を残す。** 畳むと事業名が全部消え、
+                       ;; jGrants（公募）と突き合わせる鍵が面から無くなる（実測
+                       ;; 2026-08-19: `:grant/title` はプレーン上で nil）。全部載せると
+                       ;; 面が太るので、金額が最大の 1 つに絞る —— **その会社への
+                       ;; 支出の代表であって、唯一の事業ではない**（件数は
+                       ;; `:review/programs` が言う）。
+                       (update-in [k :top] (fn [cur]
+                                             (if (and amt (or (nil? cur) (> amt (:amount cur))))
+                                               {:amount amt :title (:grant/title r)}
+                                               cur)))
                        ;; ⚠ **最初に見た名前を代表にしない。** 同じ法人番号に対して
                        ;; シートは表記を揺らす（「札幌市」「札幌市 市立札幌病院」）。
                        ;; 最初の 1 つを載せると、読み手は合計をその表記の主体に
@@ -196,6 +206,7 @@
                                    #?(:clj (format "%.1f" (:total v))
                                       :cljs (.toFixed (:total v) 1)))
                  (:unparsed v) (assoc :review/amount-unparsed (:unparsed v))
+                 (get-in v [:top :title]) (assoc :review/largest-program (get-in v [:top :title]))
                  ;; 表記が 1 つでないことを**数で言う** —— 代表名だけを見た読み手が
                  ;; 合計をその表記に帰属させないため。
                  (> (count (:names v)) 1) (assoc :review/name-variants (count (:names v))))))
