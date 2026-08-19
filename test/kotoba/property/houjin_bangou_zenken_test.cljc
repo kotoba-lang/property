@@ -87,3 +87,20 @@
       (is (= hb/licence (:source/licence m)))
       (is (= hb/attribution (:source/attribution m))))
     (is (= "00_zenkoku_all_20260731" (hb/publish-id "00_zenkoku_all_20260731.csv")))))
+
+(deftest closure-causes-are-labelled-not-guessed
+  ;; 仕様は 4 つの意味を番号を添えずに並べるだけなので、対応付けは全件ファイルに
+  ;; 当てて確かめた（実測 2026-08-19、5,816,535 行）。**`11` だけが承継先を持つ**
+  ;; ことが裏付けで、projector が毎回この分布を出す。
+  (is (= :liquidation-completed (get hb/close-cause-labels "01")))
+  (is (= :dissolved-by-merger (get hb/close-cause-labels "11")))
+  (is (= :closed-by-registrar (get hb/close-cause-labels "21")))
+  (is (= :liquidation-equivalent-non-registered (get hb/close-cause-labels "31")))
+  (is (nil? (get hb/close-cause-labels "99")) "知らないコードを既定値で埋めない"))
+
+(deftest closed-needs-only-one-of-the-two-fields
+  ;; 片方だけ入っている行が実在するので、両方を要求すると見落とす。
+  (is (true? (hb/closed? {:company/closed-at "2026-03-31"})))
+  (is (true? (hb/closed? {:company/close-cause "11"})))
+  (is (false? (hb/closed? {:company/legal-name "株式会社まだ在る"})))
+  (is (false? (hb/closed? {}))))
