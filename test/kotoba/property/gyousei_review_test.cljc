@@ -32,7 +32,7 @@
 (deftest a-record-keeps-the-declared-unit
   (let [r (gr/recipient-record
            {:program {:grant/ministry "内閣官房" :grant/title "内閣人事局経費"}
-            :block "A" :rank 1 :review-year "2024"
+            :block "A" :rank 1 :publish "database240918.xlsx"
             :fields {:name "株式会社ステージ" :houjin-bangou "3013301015869"
                      :amount-million-jpy "1" :contract-method "一般競争入札"
                      :winning-rate "0.95"}})]
@@ -44,7 +44,7 @@
     (is (= "1" (:grant/amount-million-jpy r)))
     (is (nil? (:grant/amount-yen r)))
     (is (= 1 (:review/rank r)))
-    (is (= "2024" (:review/database-year r)) "払った年ではなく DB の版")
+    (is (= "database240918.xlsx" (:review/database-publish r)) "年ではなく版そのもの")
     (is (nil? (:grant/fiscal-year r)) "支出先行の年度は DB の年度と一致しない")
     (is (= "内閣官房" (:grant/ministry r)))))
 
@@ -81,7 +81,7 @@
 (deftest the-fold-keeps-the-denominators-it-folded
   (let [rows [{:company/houjin-bangou "1111111111111" :grant/ministry "内閣官房"
                :grant/title "A事業" :grant/recipient-name "株式会社甲"
-               :grant/amount-million-jpy "10" :review/database-year "2024"}
+               :grant/amount-million-jpy "10" :review/database-publish "database240918.xlsx"}
               {:company/houjin-bangou "1111111111111" :grant/ministry "内閣官房"
                :grant/title "B事業" :grant/recipient-name "株式会社甲"
                :grant/amount-million-jpy "5.5"}
