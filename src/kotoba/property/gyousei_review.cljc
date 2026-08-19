@@ -94,7 +94,7 @@
 
 (defn recipient-record
   "1 支出先 -> 1 レコード。組織だと言えないものは nil（推測しない）。"
-  [{:keys [program block rank fields review-year]}]
+  [{:keys [program block rank fields publish]}]
   (let [nm (clean (:name fields))
         hb (some-> (clean (:houjin-bangou fields)) (str/replace #"[^0-9]" ""))
         hb (when (re-matches #"[0-9]{13}" (str hb)) hb)]
@@ -105,11 +105,13 @@
                       :review/block block
                       :review/rank rank}
                      (select-keys program (vals program-columns)))
-        ;; ⚠ **`:grant/fiscal-year` を名乗らない。** シート自身が
-        ;; 「支出先上位10者リストの中には、令和２年度、令和３年度に入札等を行った
-        ;; ものが含まれる」と注記しており、**支出先行の年度は DB の年度と一致しない**
-        ;; （実測 2026-08-19）。言えるのは「どの版のデータベースから取ったか」だけ。
-        review-year (assoc :review/database-year review-year)
+        ;; ⚠ **年を名乗らない。** シート自身が「支出先上位10者リストの中には、
+        ;; 令和２年度、令和３年度に入札等を行ったものが含まれる」と注記しており、
+        ;; 支出先行の年度は DB の年度と一致しない。さらに**版と年は 1 対 1 でない**
+        ;; —— `database240502`（R04 ページ）と `database240918`（R05 ページ）は
+        ;; どちらも 2024 年公表で、年を識別子にすると衝突する（実測 2026-08-19、
+        ;; cell を書いて初めて出た）。言えるのは**publish そのもの**だけ。
+        publish (assoc :review/database-publish publish)
         hb (assoc :company/houjin-bangou hb :company/registration-no hb)
         (clean (:amount-million-jpy fields))
         (assoc :grant/amount-million-jpy (clean (:amount-million-jpy fields)))
@@ -153,7 +155,7 @@
                        ;; 「市立札幌病院」の額に見えた（明細では 0.6 百万円）。
                        (update-in [k :names] (fnil conj #{}) (:grant/recipient-name r))
                        (update-in [k :name-counts (:grant/recipient-name r)] (fnil inc 0))
-                       (update-in [k :review-year] #(or % (:review/database-year r)))
+                       (update-in [k :publish] #(or % (:review/database-publish r)))
                        (cond-> amt (update-in [k :total] (fnil + 0) amt))
                        (cond-> (nil? amt) (update-in [k :unparsed] (fnil inc 0))))))
                {})
@@ -169,7 +171,7 @@
                         :grant/kind "subsidy-or-contract"
                         :review/payments (:payments v)
                         :review/programs (count (:programs v))}
-                 (:review-year v) (assoc :review/database-year (:review-year v))
+                 (:publish v) (assoc :review/database-publish (:publish v))
                  (:total v) (assoc :review/total-million-jpy
                                    #?(:clj (format "%.1f" (:total v))
                                       :cljs (.toFixed (:total v) 1)))
