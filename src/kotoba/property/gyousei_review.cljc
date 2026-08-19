@@ -142,7 +142,13 @@
                    (-> acc
                        (update-in [k :payments] (fnil inc 0))
                        (update-in [k :programs] (fnil conj #{}) (:grant/title r))
-                       (update-in [k :name] #(or % (:grant/recipient-name r)))
+                       ;; ⚠ **最初に見た名前を代表にしない。** 同じ法人番号に対して
+                       ;; シートは表記を揺らす（「札幌市」「札幌市 市立札幌病院」）。
+                       ;; 最初の 1 つを載せると、読み手は合計をその表記の主体に
+                       ;; 帰属させる —— 実測 2026-08-19、市の合計 209,456 百万円が
+                       ;; 「市立札幌病院」の額に見えた（明細では 0.6 百万円）。
+                       (update-in [k :names] (fnil conj #{}) (:grant/recipient-name r))
+                       (update-in [k :name-counts (:grant/recipient-name r)] (fnil inc 0))
                        (update-in [k :fiscal-year] #(or % (:grant/fiscal-year r)))
                        (cond-> amt (update-in [k :total] (fnil + 0) amt))
                        (cond-> (nil? amt) (update-in [k :unparsed] (fnil inc 0))))))
@@ -151,7 +157,10 @@
                (cond-> {:source/dataset dataset
                         :company/houjin-bangou hb
                         :company/registration-no hb
-                        :company/legal-name (:name v)
+                        ;; 代表は**最も多く現れた表記**（同数なら短い方）。
+                        :company/legal-name (->> (:name-counts v)
+                                                 (sort-by (fn [[nm n]] [(- n) (count (str nm))]))
+                                                 ffirst)
                         :grant/ministry ministry
                         :grant/kind "subsidy-or-contract"
                         :review/payments (:payments v)
@@ -160,7 +169,10 @@
                  (:total v) (assoc :review/total-million-jpy
                                    #?(:clj (format "%.1f" (:total v))
                                       :cljs (.toFixed (:total v) 1)))
-                 (:unparsed v) (assoc :review/amount-unparsed (:unparsed v)))))
+                 (:unparsed v) (assoc :review/amount-unparsed (:unparsed v))
+                 ;; 表記が 1 つでないことを**数で言う** —— 代表名だけを見た読み手が
+                 ;; 合計をその表記に帰属させないため。
+                 (> (count (:names v)) 1) (assoc :review/name-variants (count (:names v))))))
        (sort-by (juxt :company/houjin-bangou :grant/ministry))
        vec))
 
