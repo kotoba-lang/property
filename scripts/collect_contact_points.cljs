@@ -26,6 +26,13 @@
    最後に `SCANNED<TAB>n` を出し、1 件も歩けなかった run は **exit 2**
    （0 でも 1 でもない = 「答えられなかった」）で終わる。
 
+   ## 追記できる（--merge-into）
+
+   intent は増える —— 新しい認定が毎週載る。だから収集は 1 回きりの job ではなく
+   **繰り返す動作**で、既に持っている会社を毎回取り直すのは丸ごと無駄である。
+   `--merge-into <既存 edn>` を渡すと、その台帳に居る法人番号を候補から外し、
+   最後に**既存 + 新規**を書き出す（coverage は和集合で計算し直す）。
+
    usage:
      nbb -cp src scripts/collect_contact_points.cljs --out <f> --names <f> [--limit N]
      nbb -cp src scripts/collect_contact_points.cljs --out <f> --discover \\
@@ -33,6 +40,7 @@
 
    Requires GBIZINFO_TOKEN（env か Keychain `gbizinfo-api-token`）。無ければ exit 3。"
   (:require [clojure.string :as str]
+            [clojure.edn :as edn]
             [kotoba.property.contact-point :as cp]
             ["child_process" :as cp-node]
             ["fs" :as fs]))
@@ -346,7 +354,15 @@
         concurrency (int-arg "--concurrency" 1)
         industry (arg "--industry" nil)
         names-file (arg "--names" nil)
-        numbers-file (arg "--numbers" nil)]
+        numbers-file (arg "--numbers" nil)
+        merge-into (arg "--merge-into" nil)
+        existing (when (and merge-into (.existsSync fs merge-into))
+                   (vec (remove :coverage/scanned
+                                (edn/read-string (str (fs/readFileSync merge-into "utf8"))))))
+        already (set (keep :company/houjin-bangou existing))]
+    (when merge-into
+      (js/console.error (str "merge-into: " (count existing) " existing record(s), "
+                             (count already) " corporate number(s) will be skipped")))
     (when-not out (die! 3 "--out is required"))
     (when-not tok (die! 3 "GBIZINFO_TOKEN not in env and not in Keychain (gbizinfo-api-token)"))
     (when-not (or names-file numbers-file (flag? "--discover"))
@@ -388,15 +404,25 @@
                                           :employee-to (int-arg "--employee-to" 300)}
                                          tok delay-ms limit)))
         (.then (fn [cands]
-                 (js/console.error (str "candidates: " (count cands)
-                                        "  concurrency=" concurrency))
-                 (process-all cands tok delay-ms industry concurrency)))
+                 ;; **既に台帳に在る会社を候補から外す。** limit はここより前に
+                 ;; 効いているので、外した分だけ候補が減る（黙って別の会社で
+                 ;; 埋めない —— 埋めると『上位 N 件を見た』が嘘になる）。
+                 (let [cands (vec (remove #(contains? already (:corporate-number %)) cands))]
+                   (js/console.error (str "candidates: " (count cands)
+                                          (when (seq already) (str " (after merge-skip)"))
+                                          "  concurrency=" concurrency))
+                   (when (zero? (count cands))
+                     (die! 2 (str "Refusing to report a pass: every candidate was already in "
+                                  merge-into ". Nothing new was measured.")))
+                   (process-all cands tok delay-ms industry concurrency))))
         (.then
          (fn [{:keys [records skipped]}]
            (if (zero? (count records))
              (die! 2 (str "Refusing to report a pass: 0 companies scanned"
                           " (skipped=" skipped "). Nothing was measured."))
-             (let [cov (assoc (cp/coverage records)
+             (let [new-n (count records)
+                   records (into (vec existing) records)
+                   cov (assoc (cp/coverage records)
                               :coverage/skipped-by-filter skipped
                               :coverage/collected-at (now)
                               :source/attribution cp/attribution)]
@@ -406,6 +432,9 @@
                                        (println (str ";; " cp/attribution))
                                        (prn (into [cov] records))))
                (println (str "SCANNED\t" (count records)))
+               (when merge-into
+                 (println (str "PRE-EXISTING\t" (count existing)))
+                 (println (str "NEW\t" new-n)))
                (println (str "CONTACTABLE\t" (:coverage/contactable cov)))
                (println (str "FORBIDDEN\t" (:coverage/solicitation-forbidden cov)))
                (println (str "SKIPPED\t" skipped))
