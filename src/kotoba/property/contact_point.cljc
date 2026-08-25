@@ -424,10 +424,16 @@
   [registry observation]
   (let [status (:status observation)
         _ (assert (contains? statuses status) (str "unknown lead status: " status))
-        emails (->> (:emails observation)
-                    (filter #(= :role (:kind %)))
-                    (map :email)
-                    distinct vec)
+        role-emails (->> (:emails observation)
+                         (filter #(= :role (:kind %)))
+                         (reduce (fn [acc e] (if (some #(= (:email %) (:email e)) acc) acc (conj acc e))) []))
+        emails (mapv :email role-emails)
+        ;; **出所を落とさない。** `mailto:` はサイトが連絡リンクとして張ったもの、
+        ;; `text` は本文にたまたま在った文字列で、同じ扱いにする理由が無い。
+        ;; 以前はここで `:email` だけを取り出しており、`extract-emails` が分けて
+        ;; いた出所が台帳に 1 件も残っていなかった（実測 2026-08-26: 台帳の
+        ;; `:via` は 0 件）。**純関数が区別していることと、記録に残ることは別。**
+        emails-via (mapv (fn [e] {:email (:email e) :via (name (:via e))}) role-emails)
         personal-n (count (filter #(= :personal (:kind %)) (:emails observation)))]
     (-> {:source/dataset dataset
          :source/authority authority-id
@@ -451,6 +457,7 @@
         (put :web/url-source (some-> (:web-url-source observation) name))
         (put :contact/form-url (:contact-url observation))
         (put :contact/emails emails)
+        (put :contact/emails-via emails-via)
         (put :contact/site-postal-code (:site-postal-code observation))
         (put :contact/personal-emails-excluded (when (pos? personal-n) personal-n))
         (put :contact/solicitation-forbidden? (:solicitation-forbidden? observation))

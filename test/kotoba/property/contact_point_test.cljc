@@ -150,6 +150,8 @@
     (testing "個人アドレスは出力に載らず、件数だけ残る"
       (is (= ["info@stockmark.co.jp"] (:contact/emails r)))
       (is (= 1 (:contact/personal-emails-excluded r))))
+    (testing "窓口アドレスの出所が台帳に残る（mailto か text か）"
+      (is (= [{:email "info@stockmark.co.jp" :via "mailto"}] (:contact/emails-via r))))
     (is (true? (cp/contactable? r)))))
 
 (deftest status-is-closed-and-record-survives-failure
