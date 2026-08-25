@@ -18,6 +18,7 @@
     "project:gleif": "nbb -cp src scripts/project_gleif_corpus.cljs",
     "project:gleif-rr": "nbb -cp src scripts/project_gleif_rr_corpus.cljs",
     "query:gleif-corpus": "nbb -cp src scripts/query_gleif_corpus.cljs",
-    "export:ownership-datoms": "nbb -cp src scripts/export_ownership_datoms.cljs"
+    "export:ownership-datoms": "nbb -cp src scripts/export_ownership_datoms.cljs",
+    "collect:contact-points": "nbb -cp src scripts/collect_contact_points.cljs"
   }
 }
