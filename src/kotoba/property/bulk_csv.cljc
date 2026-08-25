@@ -11,7 +11,15 @@
    ## 列はヘッダ名で引く
 
    列位置を契約にしない。入れ替わったときに黙って別の列を読むのではなく、
-   `column-index` が nil を返して呼び手が止まれるようにする。"
+   `column-index` が nil を返して呼び手が止まれるようにする。
+
+   ## 区切り文字は引数（既定はカンマ）
+
+   gBizINFO はカンマだが、**CORDIS はセミコロンである**（実測 2026-08-25、
+   `organization.csv` のヘッダが `\"projectID\";\"projectAcronym\";...`）。
+   区切りを定数にしたままセミコロンのファイルを流すと、**1 行が 1 フィールドとして
+   通る** —— 例外にならず、ヘッダ検査も『列が 1 個ある』として通ってしまうので、
+   誤りが最後まで静かに運ばれる。既定はカンマのまま、明示で渡せるようにする。"
   (:require [clojure.string :as str]))
 
 (defn unclosed-quote?
@@ -35,9 +43,14 @@
          ;; 「そんな行は無かった」として静かに消える。
          ((fn [{:keys [acc pending]}] (if pending (conj acc pending) acc))))))
 
+(def default-delimiter ",")
+
 (defn split-fields
-  "1 論理行 -> フィールド。引用の外のカンマだけで割る。"
-  [line]
+  "1 論理行 -> フィールド。引用の外の区切り文字だけで割る。
+
+   `delimiter` は 1 文字の文字列。省略するとカンマ。"
+  ([line] (split-fields line default-delimiter))
+  ([line delimiter]
   (let [n (count line)]
     (loop [i 0 start 0 in-q? false out []]
       (if (>= i n)
@@ -49,8 +62,8 @@
         (let [c (subs line i (inc i))]
           (cond
             (= c "\"") (recur (inc i) start (not in-q?) out)
-            (and (= c ",") (not in-q?)) (recur (inc i) (inc i) false (conj out (subs line start i)))
-            :else (recur (inc i) start in-q? out)))))))
+            (and (= c delimiter) (not in-q?)) (recur (inc i) (inc i) false (conj out (subs line start i)))
+            :else (recur (inc i) start in-q? out))))))))
 
 (def bom "\ufeff")
 
@@ -64,11 +77,13 @@
       s)))
 
 (defn parse
-  "CSV 本文 -> 行のベクタ（1 行目がヘッダ）。BOM を落とす。"
-  [text]
-  (->> (logical-lines text)
-       (remove str/blank?)
-       (mapv (fn [line] (mapv unquote-field (split-fields line))))))
+  "CSV 本文 -> 行のベクタ（1 行目がヘッダ）。BOM を落とす。
+   `delimiter` を省略するとカンマ（gBizINFO）。CORDIS はセミコロンを渡す。"
+  ([text] (parse text default-delimiter))
+  ([text delimiter]
+   (->> (logical-lines text)
+        (remove str/blank?)
+        (mapv (fn [line] (mapv unquote-field (split-fields line delimiter)))))))
 
 (defn column-index
   "ヘッダ行 -> `{列名 位置}`。**無い列は無いと答える**（推測しない）。"
@@ -81,3 +96,23 @@
   [header]
   (let [idx (column-index header)]
     (fn [row col] (when-let [i (get idx col)] (get row i)))))
+
+;; ---------------------------------------------------------------------------
+;; TSV
+
+(def ^:private tsv-sentinel "\u0000")
+
+(defn split-tsv-row
+  "TSV の 1 行 -> フィールド。**末尾の空フィールドを落とさない。**
+
+   ⚠ `clojure.string/split` は runtime で答えが変わる。ClojureScript は
+   limit `-1` を渡しても**末尾の空文字列を捨てる**が、JVM は残す。実測 2026-08-25、
+   最後の列が空（= その行では全 boost シグナルが測れた）の行が nbb では 14 列、
+   JVM では 15 列になり、**列数で行の妥当性を見ている読み手が、正しい行を
+   『壊れている』として捨てた。**
+
+   末尾に番兵を足してから割り、番兵を捨てる。この形は**両 runtime で同じ答え**を返す
+   （どちらも『末尾の空を捨てる』ので、番兵が最後にいる限り本物の空は捨てられない）。"
+  [line]
+  (let [cells (vec (str/split (str line "\t" tsv-sentinel) #"\t"))]
+    (if (pos? (count cells)) (subvec cells 0 (dec (count cells))) [])))
