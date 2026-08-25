@@ -8,7 +8,10 @@
 
      --names <file>   1 行 1 社名。gBizINFO の検索で法人番号に解決する。
                       既に名前で決めてある ICP（lead-list.md）を機械可読にする経路。
-     --discover       prefecture + 従業員数レンジで gBizINFO を歩く。
+     --numbers <file> 1 行 `法人番号<TAB>シグナル<TAB>...`。**検索が 0 回になる。**
+                      母集団を別の面（届出認定など）から作れるならこれが速い。
+     --discover       prefecture + 従業員数レンジで gBizINFO を歩く。⚠ 業種で
+                      絞れないので、候補の大半を捨てるために 1 件ずつ払う。
 
    ⚠ **gBizINFO の `industry` / `business_item` パラメータは絞らない**（2026-08-25 実測。
    `industry=A`（農業）と `industry=G`（情報通信業）が同一の結果を返した）。だから
@@ -193,6 +196,20 @@
 ;; ---------------------------------------------------------------------------
 ;; 候補づくり
 
+(defn- candidates-from-numbers
+  "`法人番号<TAB>シグナル<TAB>...` の行 -> 候補。**検索を 1 回もしない。**
+   2 列目が在れば `:lead/intent-signal` として行に残す —— 営業する人が
+   「なぜこの会社がここに居るか」を行だけで読めるようにするため。"
+  [lines limit]
+  (->> lines
+       (map (fn [line]
+              (let [cells (str/split line #"\t")]
+                {:corporate-number (str/trim (str (first cells)))
+                 :intent-signal (some-> (second cells) str/trim not-empty)})))
+       (filter #(re-find #"^\d{13}$" (:corporate-number %)))
+       (take limit)
+       vec))
+
 (defn- candidates-from-names
   "`names` は `{:name .. :url ..}` の列。`:url` は任意（登記に URL が無いとき用）。"
   [names tok delay-ms]
@@ -216,9 +233,9 @@
                                                     (str "  (rejected: "
                                                          (str/join ", " (map #(str (:name %) "/" (name (:reason %))) rejected))
                                                          ")"))))
-                                          (conj acc {:unresolved true
-                                                     :asked-name nm
-                                                     :rejected-candidates (vec rejected)}))))))))))
+                                            (conj acc {:unresolved true
+                                                       :asked-name nm
+                                                       :rejected-candidates (vec rejected)})))))))))) 
           (js/Promise.resolve [])
           names))
 
@@ -237,25 +254,118 @@
       (step 1 []))))
 
 ;; ---------------------------------------------------------------------------
-;; main
+;; 1 候補を最後まで通す
 
 (defn- industry-ok? [registry wanted]
   (or (str/blank? (str wanted))
-      (let [inds (set (map str (get registry "industry")))]
-        (contains? inds (str wanted)))))
+      (contains? (set (map str (get registry "industry"))) (str wanted))))
+
+(defn- process-one
+  "候補 1 件 -> `{:record ..}` か `{:skipped true}`。"
+  [{:keys [corporate-number asked-name fallback-url name-match intent-signal
+           unresolved rejected-candidates]}
+   tok delay-ms industry]
+  (if unresolved
+    (js/Promise.resolve
+     {:record (cp/->record {} {:status :unresolved
+                               :observed-at (now)
+                               :rejected-candidates rejected-candidates
+                               :note (str "asked: " asked-name)})})
+    (-> (sleep delay-ms)
+        (.then (fn [] (detail corporate-number tok)))
+        (.then (fn [reg]
+                 (cond
+                   (nil? reg)
+                   (do (js/console.error (str "  detail unavailable: " corporate-number))
+                       {:skipped true})
+
+                   (not (industry-ok? reg industry))
+                   {:skipped true}
+
+                   :else
+                   (-> (observe reg fallback-url delay-ms)
+                       (.then (fn [obs]
+                                (let [reg (if (and fallback-url
+                                                   (str/blank? (str (get reg "company_url"))))
+                                            (assoc reg "company_url" fallback-url)
+                                            reg)
+                                      rec (cond-> (cp/->record reg (assoc obs :name-match name-match))
+                                            asked-name (assoc :lead/asked-name asked-name)
+                                            intent-signal (assoc :lead/intent-signal intent-signal))]
+                                  (js/console.error
+                                   (str "  " (name (:lead/status rec)) "  "
+                                        (:company/legal-name rec)
+                                        (when-let [u (:contact/form-url rec)] (str "  " u))))
+                                  {:record rec})))))))
+        (.catch (fn [e]
+                  ;; 1 社の失敗で run 全体を落とさない。**ただし黙って消さない** ——
+                  ;; 行として残さないなら、せめて skipped として数える。
+                  (js/console.error (str "  worker error on " corporate-number ": " (.-message e)))
+                  {:skipped true})))))
+
+(defn- process-all
+  "候補列を、同時に走る worker `n` 本で処理する。
+
+   逐次だと 1 社あたり『gBizINFO 1 回 + robots + homepage + 窓口候補を最大 8 回』の
+   往復をすべて直列に待つので、壁時計は候補数 × その合計になる。ホストが違う
+   fetch は並べても互いを待たないので、ここが効く。
+
+   **`n` を上げすぎない。** gBizINFO は 1 つのホストで、worker ごとの `delay-ms`
+   しか間隔を保証しない —— 実効レートは `n / delay-ms` である。"
+  [cands tok delay-ms industry n]
+  (let [pending (atom (vec cands))
+        records (atom [])
+        skipped (atom 0)
+        done (atom 0)
+        total (count cands)
+        take-one! (fn []
+                    (let [[head & tail] @pending]
+                      (when head (reset! pending (vec tail)) head)))]
+    (letfn [(worker []
+              (if-let [c (take-one!)]
+                (-> (process-one c tok delay-ms industry)
+                    (.then (fn [{:keys [record skipped?] :as r}]
+                             (if record (swap! records conj record) (swap! skipped inc))
+                             (let [d (swap! done inc)]
+                               (when (zero? (mod d 50))
+                                 (js/console.error (str "  ... " d "/" total
+                                                        "  records=" (count @records)))))
+                             (worker))))
+                (js/Promise.resolve nil)))]
+      (-> (js/Promise.all (clj->js (vec (repeatedly (max 1 n) worker))))
+          (.then (fn [] {:records @records :skipped @skipped}))))))
+
+;; ---------------------------------------------------------------------------
+;; main
 
 (defn -main []
   (let [out (arg "--out" nil)
         tok (token)
         delay-ms (int-arg "--delay-ms" 400)
         limit (int-arg "--limit" 50)
+        concurrency (int-arg "--concurrency" 1)
         industry (arg "--industry" nil)
-        names-file (arg "--names" nil)]
+        names-file (arg "--names" nil)
+        numbers-file (arg "--numbers" nil)]
     (when-not out (die! 3 "--out is required"))
     (when-not tok (die! 3 "GBIZINFO_TOKEN not in env and not in Keychain (gbizinfo-api-token)"))
-    (when-not (or names-file (flag? "--discover"))
-      (die! 3 "give either --names <file> or --discover"))
-    (-> (if names-file
+    (when-not (or names-file numbers-file (flag? "--discover"))
+      (die! 3 "give one of --names <file> / --numbers <file> / --discover"))
+    (-> (cond
+          numbers-file
+          (let [lines (->> (str (fs/readFileSync numbers-file "utf8"))
+                           str/split-lines
+                           (map str/trim)
+                           (remove str/blank?)
+                           (remove #(str/starts-with? % "#")))
+                cands (candidates-from-numbers lines limit)]
+            (when (zero? (count cands))
+              (die! 2 (str "Refusing to report a pass: no 13-digit corporate number in "
+                           numbers-file " (" (count lines) " non-comment line(s) read).")))
+            (js/console.error (str "using " (count cands) " corporate number(s) — no search needed"))
+            (js/Promise.resolve cands))
+
+          names-file
           ;; 1 行 1 社。`社名` だけでも、`社名<TAB>URL` でもよい。
           (let [names (->> (str (fs/readFileSync names-file "utf8"))
                            str/split-lines
@@ -270,52 +380,17 @@
                            vec)]
             (js/console.error (str "resolving " (count names) " name(s) via gBizINFO search"))
             (candidates-from-names names tok delay-ms))
+
+          :else
           (do (js/console.error "discovering candidates via gBizINFO search")
               (candidates-from-discovery {:prefecture (arg "--prefecture" "13")
                                           :employee-from (int-arg "--employee-from" 10)
                                           :employee-to (int-arg "--employee-to" 300)}
                                          tok delay-ms limit)))
-        (.then
-         (fn [cands]
-           (js/console.error (str "candidates: " (count cands)))
-           (reduce
-            (fn [p {:keys [corporate-number asked-name fallback-url name-match
-                           unresolved rejected-candidates]}]
-              (.then p (fn [{:keys [records skipped] :as acc}]
-                         (if unresolved
-                           (js/Promise.resolve
-                            (assoc acc :records
-                                   (conj records (cp/->record {} {:status :unresolved
-                                                                  :observed-at (now)
-                                                                  :rejected-candidates rejected-candidates
-                                                                  :note (str "asked: " asked-name)}))))
-                         (-> (sleep delay-ms)
-                             (.then (fn [] (detail corporate-number tok)))
-                             (.then (fn [reg]
-                                      (cond
-                                        (nil? reg)
-                                        (do (js/console.error (str "  detail unavailable: " corporate-number))
-                                            (assoc acc :skipped (inc skipped)))
-
-                                        (not (industry-ok? reg industry))
-                                        (assoc acc :skipped (inc skipped))
-
-                                        :else
-                                        (-> (observe reg fallback-url delay-ms)
-                                            (.then (fn [obs]
-                                                     (let [reg (if (and fallback-url
-                                                                        (str/blank? (str (get reg "company_url"))))
-                                                                 (assoc reg "company_url" fallback-url)
-                                                                 reg)
-                                                           rec (cond-> (cp/->record reg (assoc obs :name-match name-match))
-                                                                 asked-name (assoc :lead/asked-name asked-name))]
-                                                       (js/console.error
-                                                        (str "  " (name (:lead/status rec)) "  "
-                                                             (:company/legal-name rec)
-                                                             (when-let [u (:contact/form-url rec)] (str "  " u))))
-                                                       (assoc acc :records (conj records rec))))))))))))))
-            (js/Promise.resolve {:records [] :skipped 0})
-            cands)))
+        (.then (fn [cands]
+                 (js/console.error (str "candidates: " (count cands)
+                                        "  concurrency=" concurrency))
+                 (process-all cands tok delay-ms industry concurrency)))
         (.then
          (fn [{:keys [records skipped]}]
            (if (zero? (count records))
