@@ -59,9 +59,15 @@
 ;; fetch — 落ちても例外にしない。1 社のタイムアウトで全体を止めない。
 
 (defn- fetch-text
-  "[status body] を返す。取りに行けなかったときは [nil nil]。
+  "[status body final-url] を返す。取りに行けなかったときは [nil nil nil]。
+
    **status 0 と status 404 を同じ nil に畳まない** —— 前者は測れなかった、
-   後者は測って無かった。"
+   後者は測って無かった。
+
+   `final-url` を返すのは、**リクエストした URL と、実際に連絡点を出した URL が
+   別物だから**である（実測 2026-08-25: 記録した 10 件中 8 件が 301/307/308 を
+   返していた —— `redirect: follow` で中身は取れているので収集は成功して見えるが、
+   台帳に載っていたのはリダイレクト元だった）。載せるのは応答した URL にする。"
   ([url ms] (fetch-text url ms nil))
   ([url ms headers]
    (let [ctl (js/AbortController.)
@@ -73,9 +79,9 @@
                                                  headers)}))
          (.then (fn [^js res]
                   (-> (.text res)
-                      (.then (fn [body] [(.-status res) body]))
-                      (.catch (fn [_] [(.-status res) nil])))))
-         (.catch (fn [_] [nil nil]))
+                      (.then (fn [body] [(.-status res) body (.-url res)]))
+                      (.catch (fn [_] [(.-status res) nil (.-url res)])))))
+         (.catch (fn [_] [nil nil nil]))
          (.finally (fn [] (js/clearTimeout t)))))))
 
 ;; ---------------------------------------------------------------------------
@@ -141,9 +147,17 @@
                                      found
                                      (-> (sleep delay-ms)
                                          (.then (fn [] (fetch-text url 20000)))
-                                         (.then (fn [[st body]]
+                                         ;; **応答した URL を載せる。** リダイレクト先が
+                                         ;; 実際の窓口なので、要求した URL を台帳に書くと
+                                         ;; 次に開いた人が 301 を踏む。
+                                         (.then (fn [[st body final-url]]
                                                   (when (and (= 200 st) body (cp/contact-page? body))
-                                                    {:contact-url url :html body}))))))))
+                                                    ;; ⚠ ここで `normalise-url` を通さない。
+                                                    ;; 末尾スラッシュを落とすのが 301 の原因
+                                                    ;; そのものだった（`/contact/` -> `/contact`）。
+                                                    ;; 応答した URL を一字も変えずに載せる。
+                                                    {:contact-url (or (not-empty (str final-url)) url)
+                                                     :html body}))))))))
                       (js/Promise.resolve nil)
                       candidates)
                      (.then (fn [found]
