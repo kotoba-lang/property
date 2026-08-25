@@ -29,3 +29,14 @@
   (is (false? (csv/unclosed-quote? "\"a\",\"b\"")))
   (is (true? (csv/unclosed-quote? "\"a\",\"b")))
   (is (false? (csv/unclosed-quote? "no quotes here"))))
+
+(deftest tsv-keeps-trailing-empty-fields
+  (testing "末尾が空の行を落とさない — cljs の str/split は limit -1 でも捨てる"
+    (is (= ["a" "b" ""] (csv/split-tsv-row "a\tb\t")))
+    (is (= ["a" "" "" ""] (csv/split-tsv-row "a\t\t\t")))
+    (is (= ["a" "b" "c"] (csv/split-tsv-row "a\tb\tc")))
+    (is (= [""] (csv/split-tsv-row ""))))
+  (testing "列数で行の妥当性を見る読み手が、正しい行を捨てないこと"
+    (let [row (str "926362126\tsig\tACME\tstreet\t1000\tWien\tAT\tAT1\t\t"
+                   "https://ec.europa.eu/x\ttrue\t3.0\t3.5\tai-topic,sme\t")]
+      (is (= 15 (count (csv/split-tsv-row row)))))))

@@ -219,7 +219,9 @@
 (def contact-text-re
   #"(?i)(お問い?合わ?せ|問い?合わ?せ|コンタクト|contact|inquiry|get in touch)")
 
-(defn- strip-tags [s]
+(defn strip-tags
+  "HTML -> 本文らしいテキスト。script/style を落とす。"
+  [s]
   (-> (str s)
       (str/replace #"(?is)<script[^>]*>.*?</script>" " ")
       (str/replace #"(?is)<style[^>]*>.*?</style>" " ")
@@ -234,18 +236,25 @@
 
    href と アンカーテキストの両方を見るのは、日本企業サイトの問い合わせリンクが
    `/contact/` のこともあれば `/cgi-bin/form.cgi?id=3` のこともあるため。
-   後者は href からは判らず、テキスト『お問い合わせ』だけが手掛かりになる。"
-  [html base]
-  (->> (re-seq anchor-re (str html))
-       (keep (fn [[_ href inner]]
-               (let [text (strip-tags inner)]
-                 (when (or (re-find contact-href-re (str href))
-                           (re-find contact-text-re text))
-                   (absolutise href base)))))
-       (remove nil?)
-       (remove #(re-find #"(?i)\.(pdf|jpe?g|png|gif|zip|docx?|xlsx?)$" %))
-       distinct
-       vec))
+   後者は href からは判らず、テキスト『お問い合わせ』だけが手掛かりになる。
+
+   `opts` に `{:href-re .. :text-re ..}` を渡すと語彙を差し替えられる（EU の
+   独語・仏語・西語などに当てるため）。**省略すると日本語の既定** —— 既存の
+   呼び手の挙動を変えない。"
+  ([html base] (discover-contact-links html base nil))
+  ([html base {:keys [href-re text-re]}]
+   (let [href-re (or href-re contact-href-re)
+         text-re (or text-re contact-text-re)]
+     (->> (re-seq anchor-re (str html))
+          (keep (fn [[_ href inner]]
+                  (let [text (strip-tags inner)]
+                    (when (or (re-find href-re (str href))
+                              (re-find text-re text))
+                      (absolutise href base)))))
+          (remove nil?)
+          (remove #(re-find #"(?i)\.(pdf|jpe?g|png|gif|zip|docx?|xlsx?)$" %))
+          distinct
+          vec))))
 
 (def ^:private strong-path-re
   #"(?i)/(contact|inquir(y|ies)|otoiawase|toiawase|form|support/contact)")
@@ -258,18 +267,24 @@
 
 (defn score-contact-candidate
   "候補 URL の連絡窓口らしさ。大きいほど良い。**fetch の前に順序を決める**ので、
-   1 件目が通った時点で止めてよくなる（＝リクエストを増やさずに精度が上がる）。"
-  [url]
-  (let [path (or (second (re-find #"^https?://[^/]+(/.*)$" (str url))) "/")]
-    (cond-> 0
-      (re-find strong-path-re path) (+ 100)
-      (re-find decoy-path-re path) (- 80)
-      true (- (min 40 (count path))))))
+   1 件目が通った時点で止めてよくなる（＝リクエストを増やさずに精度が上がる）。
+
+   `opts` に `{:strong-re .. :decoy-re ..}` を渡すと語彙を差し替えられる。"
+  ([url] (score-contact-candidate url nil))
+  ([url {:keys [strong-re decoy-re]}]
+   (let [strong-re (or strong-re strong-path-re)
+         decoy-re (or decoy-re decoy-path-re)
+         path (or (second (re-find #"^https?://[^/]+(/.*)$" (str url))) "/")]
+     (cond-> 0
+       (re-find strong-re path) (+ 100)
+       (re-find decoy-re path) (- 80)
+       true (- (min 40 (count path)))))))
 
 (defn rank-contact-candidates
   "候補を良い順に並べる。同点は入力順を保つ。"
-  [urls]
-  (vec (sort-by (fn [u] (- (score-contact-candidate u))) (distinct urls))))
+  ([urls] (rank-contact-candidates urls nil))
+  ([urls opts]
+   (vec (sort-by (fn [u] (- (score-contact-candidate u opts))) (distinct urls)))))
 
 (def common-contact-paths
   "autodiscovery が空振りしたときの当て先。**当てただけでは載せない。**
@@ -279,15 +294,19 @@
 
 (defn contact-page?
   "取得できた HTML が実際に連絡点かどうか。form か mailto か、連絡を表す語が
-   本文に在ることを求める —— 200 を返しただけの SPA シェルを連絡点にしない。"
-  [html]
-  (let [h (str html)
-        text (strip-tags h)]
-    (boolean
-     (or (re-find #"(?i)<form[\s>]" h)
-         (re-find #"(?i)mailto:" h)
-         (and (re-find contact-text-re text)
-              (re-find #"(?i)(<input[\s>]|<textarea[\s>]|電話|TEL|E-?mail|メール)" h))))))
+   本文に在ることを求める —— 200 を返しただけの SPA シェルを連絡点にしない。
+
+   `text-re` を渡すと語彙を差し替えられる。省略すると日本語の既定。"
+  ([html] (contact-page? html nil))
+  ([html text-re]
+   (let [text-re (or text-re contact-text-re)
+         h (str html)
+         text (strip-tags h)]
+     (boolean
+      (or (re-find #"(?i)<form[\s>]" h)
+          (re-find #"(?i)mailto:" h)
+          (and (re-find text-re text)
+               (re-find #"(?i)(<input[\s>]|<textarea[\s>]|電話|TEL|E-?mail|メール|Telefon|Tel\.|Téléphone|Teléfono|Telefono)" h)))))))
 
 ;; ---------------------------------------------------------------------------
 ;; メール
@@ -349,9 +368,13 @@
 (defn solicitation-forbidden?
   "相手のページが営業目的の連絡を断っているか。**こちらの判断ではなく観測**。
    true の行に cold outbound をしない（`outbound-leads-p0.csv` が Preferred
-   Networks に `skip-cold` と書いたのと同じ列を、機械で埋める）。"
-  [html]
-  (boolean (re-find solicitation-forbidden-re (strip-tags html))))
+   Networks に `skip-cold` と書いたのと同じ列を、機械で埋める）。
+
+   `re` を渡すと語彙を差し替えられる。省略すると日本語 + 最小限の英語の既定 ——
+   **EU の面でこれを既定のまま使わない**（独語・仏語・西語を 1 語も見ない）。"
+  ([html] (solicitation-forbidden? html nil))
+  ([html re]
+   (boolean (re-find (or re solicitation-forbidden-re) (strip-tags html)))))
 
 ;; ---------------------------------------------------------------------------
 ;; 住所
