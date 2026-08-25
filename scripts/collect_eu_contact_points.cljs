@@ -294,7 +294,15 @@
                    (println (str "PERSONAL-EMAILS-EXCLUDED\t" (:coverage/personal-emails-excluded cov)))
                    (println (str "FORBIDDEN\t" (:coverage/solicitation-forbidden cov)))
                    (println (str "SKIPPED\t" skipped))
-                   (println (str "OUT\t" out))))))
+                   (println (str "OUT\t" out))
+                   ;; **明示的に終わる。** `fetch`(undici) の connection pool が
+                   ;; 開いたままだと node のイベントループが空にならず、
+                   ;; **書き出しが終わっているのにプロセスが live のまま残る**
+                   ;; （実測 2026-08-25: 3,000 件を書き終えた後も終了しなかった）。
+                   ;; 呼び出し側から見ると『まだ走っている』と区別が付かないので、
+                   ;; loop や cron に載せると次の周が来ない。
+                   ;; `setImmediate` を 1 度挟んで stdout を掃き出してから落とす。
+                   (js/setImmediate #(.exit js/process 0))))))
             (.catch (fn [e]
                       (when-not (:exit (ex-data e))
                         (js/console.error (str "collector failed: " (.-message e)))
