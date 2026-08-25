@@ -36,7 +36,12 @@
 (defn- int-arg [n d] (let [v (arg n nil)] (if v (js/parseInt v 10) d)))
 
 (defn- die! [code msg]
-  (js/console.error msg) (set! (.-exitCode js/process) code) (throw (ex-info msg {:exit code})))
+  ;; ⚠ `exitCode` を立ててから throw しない。**この throw は `-main` の同期部分から
+  ;; 外へ抜けるので nbb の既定 exit 1 になり、契約した 2/3 が一度も出なかった**
+  ;; （実測 2026-08-26）。`.exit` で即座に落とす。ここまでで stdout には何も
+  ;; 書いていないので、切り捨てられる出力は無い。
+  (js/console.error msg)
+  (.exit js/process code))
 
 (defn- sh [args]
   (let [r (.spawnSync cp (first args) (clj->js (vec (rest args))) #js {:encoding "utf8"})]
