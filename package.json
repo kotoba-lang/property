@@ -21,6 +21,8 @@
     "export:ownership-datoms": "nbb -cp src scripts/export_ownership_datoms.cljs",
     "collect:contact-points": "nbb -cp src scripts/collect_contact_points.cljs",
     "export:lead-sheet": "nbb -cp src scripts/export_lead_sheet.cljs",
-    "collect:intent-pool": "nbb -cp src scripts/collect_intent_pool.cljs"
+    "collect:intent-pool": "nbb -cp src scripts/collect_intent_pool.cljs",
+    "audit:contact-forms": "nbb -cp src scripts/audit_contact_forms.cljs",
+    "report:contact-forms": "nbb -cp src scripts/report_contact_forms.cljs"
   }
 }
