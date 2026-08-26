@@ -241,3 +241,91 @@
       (is (= "2" (get (:hit r) "corporate_number")))))
   (testing "候補ゼロは、拒否理由も空で返る（『解決できなかった』が空で表せる）"
     (is (= {:rejected []} (cp/resolve-hit "株式会社なにか" [])))))
+
+;; ---------------------------------------------------------------------------
+;; registry を持たない面（`->site-record` / `site-coverage`）
+
+(deftest absolutise-drops-non-page-schemes
+  (testing "mailto:/tel: はページの住所ではない —— origin に継ぎ足された偽 URL を作らない"
+    ;; 実測 2026-08-26: TKC 会員事務所のページで
+    ;; `https://www.tkcnf.com/mailto:tera3-humming@tkcnf.or.jp?subject=お問合せ`
+    ;; が候補として並び、実在しない URL が候補枠を 1 つ食っていた。
+    (is (nil? (cp/absolutise "mailto:info@example.jp" "https://a.example.jp")))
+    (is (nil? (cp/absolutise "mailto:info@example.jp?subject=x" "https://a.example.jp")))
+    (is (nil? (cp/absolutise "MAILTO:info@example.jp" "https://a.example.jp")))
+    (is (nil? (cp/absolutise "tel:0312345678" "https://a.example.jp")))
+    (is (nil? (cp/absolutise "callto:x" "https://a.example.jp"))))
+  (testing "ただの相対パスは今までどおり絶対化される（緩めすぎていない）"
+    (is (= "https://a.example.jp/mail" (cp/absolutise "mail" "https://a.example.jp")))
+    (is (= "https://a.example.jp/telecom" (cp/absolutise "/telecom" "https://a.example.jp")))))
+
+(def ^:private site-seed
+  {:name "テスト税理士事務所" :url "https://t.example.jp/" :segment "tax-office"
+   :discovery :web-search :query "route-x"})
+
+(deftest site-record-omits-registry-columns
+  (testing "法人番号のキーごと出さない —— 無い列と、空の列は違う"
+    (let [r (cp/->site-record site-seed {:status :ok :observed-at "2026-08-26T00:00:00Z"})]
+      (is (not (contains? r :company/houjin-bangou)))
+      (is (not (contains? r :company/location)))
+      (is (not (contains? r :company/representative-name)))
+      (is (= cp/site-dataset (:source/dataset r)))
+      (is (= "route-x" (:site/discovery-query r)))
+      (is (= "web-search" (:site/discovery r)))
+      ;; 末尾スラッシュだけで別 URL にしない
+      (is (= "https://t.example.jp" (:web/url r))))))
+
+(deftest site-record-keeps-role-drops-personal
+  (let [obs {:status :ok
+             :observed-at "2026-08-26T00:00:00Z"
+             :emails [{:email "info@t.example.jp" :via :mailto :kind :role}
+                      {:email "taro.yamada@t.example.jp" :via :text :kind :personal}
+                      {:email "info@t.example.jp" :via :text :kind :role}]}
+        r (cp/->site-record site-seed obs)]
+    (testing "窓口だけが出力に載り、個人は件数だけ残る"
+      (is (= ["info@t.example.jp"] (:contact/emails r)))
+      (is (= 1 (:contact/personal-emails-excluded r))))
+    (testing "出所（mailto / text）を落とさない。重複は畳む"
+      (is (= [{:email "info@t.example.jp" :via "mailto"}] (:contact/emails-via r))))))
+
+(deftest site-record-refuses-unknown-values
+  (testing "終わり方の値域は閉じている"
+    (is (thrown? #?(:clj AssertionError :cljs js/Error)
+                 (cp/->site-record site-seed {:status :something-new}))))
+  (testing "発見経路の値域も閉じている —— どう見つけたかを自由文字列にしない"
+    (is (thrown? #?(:clj AssertionError :cljs js/Error)
+                 (cp/->site-record (assoc site-seed :discovery :guessed)
+                                   {:status :ok})))))
+
+(deftest site-coverage-separates-measured-from-empty
+  (let [ok-role (cp/->site-record site-seed
+                                  {:status :ok :emails [{:email "info@a.jp" :via :mailto :kind :role}]})
+        ok-personal (cp/->site-record (assoc site-seed :url "https://b.example.jp")
+                                      {:status :ok :emails [{:email "hanako@b.jp" :via :text :kind :personal}]})
+        failed (cp/->site-record (assoc site-seed :url "https://c.example.jp" :segment "it-partner")
+                                 {:status :fetch-failed})
+        empty- (cp/->site-record (assoc site-seed :url "https://d.example.jp")
+                                 {:status :no-contact-point})
+        cov (cp/site-coverage [ok-role ok-personal failed empty-])]
+    (testing "『メールは在ったが個人だった』を『メールが無い』に畳まない"
+      (is (= 1 (:coverage/email-only-personal cov)))
+      (is (= 1 (:coverage/with-role-email cov))))
+    (testing "見に行けなかった行と、見に行けて空だった行は別に数える"
+      (is (= 1 (get (:coverage/by-status cov) :fetch-failed)))
+      (is (= 1 (get (:coverage/by-status cov) :no-contact-point))))
+    (testing "区分ごとに分けたまま数える —— 混ぜると仮説そのものを検証できない"
+      (is (= 3 (get-in cov [:coverage/by-segment "tax-office" :scanned])))
+      (is (= 1 (get-in cov [:coverage/by-segment "tax-office" :with-role-email])))
+      (is (= 1 (get-in cov [:coverage/by-segment "it-partner" :fetch-failed])))
+      (is (= 0 (get-in cov [:coverage/by-segment "it-partner" :with-role-email]))))
+    (testing "送ってよい行は status と営業お断りの両方を見る"
+      (is (= 1 (:coverage/contactable cov))))))
+
+(deftest site-record-honours-solicitation-refusal
+  (let [r (cp/->site-record site-seed
+                            {:status :ok
+                             :solicitation-forbidden? true
+                             :emails [{:email "info@a.jp" :via :mailto :kind :role}]})]
+    (is (true? (:contact/solicitation-forbidden? r)))
+    (testing "窓口が在っても、断っている相手は contactable ではない"
+      (is (false? (cp/contactable? r))))))

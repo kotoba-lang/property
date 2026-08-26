@@ -71,6 +71,12 @@
       (str/blank? href) nil
       (str/starts-with? href "#") nil
       (str/starts-with? href "javascript:") nil
+      ;; `mailto:` / `tel:` はページの住所ではない。落とさないと origin に継ぎ足されて
+      ;; `https://host/mailto:info@example.jp?subject=...` という**実在しない URL**が
+      ;; 候補として並ぶ（実測 2026-08-26、TKC 会員事務所のページ）。fetch は失敗するので
+      ;; 実害は薄いが、候補枠を 1 つ食い、`:lead/note` の候補数を水増しする。
+      ;; メールは `extract-emails` が生 HTML から別途拾うので、ここで捨てて失うものは無い。
+      (re-find #"(?i)^(mailto|tel|sms|fax|callto):" href) nil
       (re-find #"^https?://" href) (str/replace href #"/+$" "")
       (str/starts-with? href "//") (str "https:" (str/replace href #"/+$" ""))
       (str/starts-with? href "/") (when-let [o (origin base)]
@@ -490,3 +496,95 @@
      :coverage/solicitation-forbidden (count (filter :contact/solicitation-forbidden? records))
      :coverage/with-form-url (count (filter :contact/form-url records))
      :coverage/with-role-email (count (filter #(seq (:contact/emails %)) records))}))
+
+;; ---------------------------------------------------------------------------
+;; registry を持たない面 —— URL から始める
+;;
+;; 上のレコードは**法人番号が起点**で、gBizINFO の詳細に載っている `company_url`
+;; を見に行く。実測 2026-08-26、節税 ICP ではその URL 保有率が 4% だったので、
+;; 母集団の 96% に対して起点そのものが無かった。
+;;
+;; 士業・IT 顧問のような専門サービス業は逆で、**サイトの側が先に手に入る**。
+;; その面のためのレコードをここに置く。**法人番号を持たない**ことが、この面と
+;; 上の面の決定的な違いである —— だから `:company/houjin-bangou` を nil で置かず、
+;; **キーごと出さない**。無い列と、空の列は違う。
+
+(def site-dataset "lead-site-contact-point")
+
+(def site-authority-id "self-published (operator-discovered site)")
+
+(def site-attribution
+  "連絡点は各社の自己公表ページ（`:contact/source-url` に URL、`:source/observed-at` に取得時刻）。サイトの発見経路は `:site/discovery` に記録する。登記情報は含まない。")
+
+(def discovery-methods
+  "`:site/discovery` の値域。**閉じている。** どうやってその URL に辿り着いたかは
+   `:web/url-source` とは別の問い —— 後者は『誰がそう言ったか』、こちらは
+   『どう見つけたか』である。前者だけだと、web 検索で拾った URL と、人が名簿を
+   見て打ち込んだ URL が同じ `operator-supplied` になる。"
+  #{:web-search :operator-listed :directory-listing})
+
+(defn ->site-record
+  "`{:name .. :url .. :segment .. :discovery .. :query ..}` + observation -> 1 レコード。
+
+   `segment` は営業側の区分（`\"tax-office\"` / `\"it-partner\"` など）で、
+   **こちらが付けた札**である。相手がそう名乗ったわけではないので `:site/*` に置く。
+
+   status が `:ok` 以外でもレコードは作る（理由は `->record` と同じ）。"
+  [{:keys [name url segment discovery query]} observation]
+  (let [status (:status observation)
+        _ (assert (contains? statuses status) (str "unknown lead status: " status))
+        _ (assert (or (nil? discovery) (contains? discovery-methods discovery))
+                  (str "unknown discovery method: " discovery))
+        role-emails (->> (:emails observation)
+                         (filter #(= :role (:kind %)))
+                         (reduce (fn [acc e]
+                                   (if (some #(= (:email %) (:email e)) acc) acc (conj acc e)))
+                                 []))
+        personal-n (count (filter #(= :personal (:kind %)) (:emails observation)))]
+    (-> {:source/dataset site-dataset
+         :source/authority site-authority-id
+         :company/jurisdiction "JP"
+         :lead/status status}
+        (put :site/name name)
+        (put :site/segment segment)
+        (put :site/discovery (some-> discovery clojure.core/name))
+        (put :site/discovery-query query)
+        (put :web/url (normalise-url url))
+        (put :web/url-source "operator-supplied")
+        (put :contact/form-url (:contact-url observation))
+        (put :contact/emails (mapv :email role-emails))
+        (put :contact/emails-via (mapv (fn [e] {:email (:email e)
+                                                :via (clojure.core/name (:via e))})
+                                       role-emails))
+        (put :contact/site-postal-code (:site-postal-code observation))
+        (put :contact/personal-emails-excluded (when (pos? personal-n) personal-n))
+        (put :contact/solicitation-forbidden? (:solicitation-forbidden? observation))
+        (put :source/observed-at (:observed-at observation))
+        (put :lead/note (:note observation)))))
+
+(defn site-coverage
+  "`coverage` に、この面でだけ意味のある 2 つを足す。
+
+   - `:coverage/email-only-personal` —— **メールは公開していたが、窓口ではなく
+     個人名のアドレスだった**社の数。これを別に数えないと、規律で落とした分が
+     『メールを公開していない会社』に混ざり、母集団の到達可能性を実際より低く
+     見積もる（逆に、規律を緩めれば伸びる余地がどれだけ在るかも判らなくなる）。
+   - `:coverage/by-segment` —— 区分ごとの窓口メール取得率。**segment を分けた
+     まま数えないと、仮説そのものを検証できない。**"
+  [records]
+  (assoc (coverage records)
+         :source/dataset site-dataset
+         :coverage/email-only-personal
+         (count (filter #(and (empty? (:contact/emails %))
+                              (pos? (or (:contact/personal-emails-excluded %) 0)))
+                        records))
+         :coverage/by-segment
+         (into {}
+               (for [[seg rs] (group-by :site/segment records)]
+                 [(or seg "unsegmented")
+                  {:scanned (count rs)
+                   :with-role-email (count (filter #(seq (:contact/emails %)) rs))
+                   :with-form-url (count (filter :contact/form-url rs))
+                   :contactable (count (filter contactable? rs))
+                   :solicitation-forbidden (count (filter :contact/solicitation-forbidden? rs))
+                   :fetch-failed (count (filter #(= :fetch-failed (:lead/status %)) rs))}]))))
