@@ -48,7 +48,7 @@
          (.catch (fn [_] [nil nil nil]))
          (.finally (fn [] (js/clearTimeout t)))))))
 
-(defn- robots-for
+(defn robots-for
   "origin -> robots.txt 本文。**origin ごとに引く。**
 
    ⚠ 以前は種の origin の robots.txt だけを引いて、候補が別ホストでも同じ本文で
@@ -66,8 +66,12 @@
                    (swap! cache assoc origin txt)
                    txt))))))
 
-(defn- blocked?*
-  "URL 1 本 -> 拒まれているか。**その URL のホストの robots.txt で**判定する。"
+(defn blocked?*
+  "⚠ **公開している。** `collect_contact_points.cljs` / `collect_eu_contact_points.cljs`
+   が自前に持っていた同名の判定は、種の origin の robots だけを見ていて
+   **cross-origin の候補では常に許可に倒れていた**（2026-08-26 実測）。
+   probe 全体を寄せるのは時期尚早でも、**拒否できない検査を残す理由は無い**ので、
+   この 1 つだけを共有する。"
   [cache url]
   (let [org (cp/origin url)]
     (if-not org

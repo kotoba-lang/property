@@ -42,6 +42,7 @@
   (:require [clojure.string :as str]
             [clojure.edn :as edn]
             [kotoba.property.contact-point :as cp]
+            [kotoba.property.site-probe :as probe]
             ["child_process" :as cp-node]
             ["fs" :as fs]))
 
@@ -66,6 +67,10 @@
                           #js ["find-generic-password" "-s" "gbizinfo-api-token" "-w"]
                           #js {:encoding "utf8"})]
         (when (zero? (or (.-status r) 1)) (not-empty (str/trim (str (.-stdout r))))))))
+
+(def ^{:doc "origin -> robots.txt 本文。**プロセス全体で 1 つ。** 会社をまたいで
+  同じホストを何度も引かないため、かつ cross-origin の候補でもその host の
+  robots が引かれることを保証するため。"} robots-cache (atom {}))
 
 (defn- now [] (.toISOString (js/Date.)))
 (defn- sleep [ms] (js/Promise. (fn [res] (js/setTimeout res ms))))
@@ -135,12 +140,20 @@
 (defn- probe-contact
   "homepage を起点に連絡点を探す。見つかったら {:contact-url .. :html ..}。
    robots.txt に拒まれたパスには行かない。"
-  [site-url robots delay-ms]
-  (let [org (cp/origin site-url)
-        blocked? (fn [u] (let [p (str/replace (str u) (re-pattern (str "^" org)) "")]
-                           (cp/robots-disallows? robots cp/user-agent (if (str/blank? p) "/" p))))]
-    (if (blocked? site-url)
-      (js/Promise.resolve {:status :robots-disallowed})
+  [site-url robots-cache delay-ms]
+  ;; ⚠ 以前はここで**種の origin の robots だけ**を使い、path を `^org` の
+  ;; str/replace で切り出していた。cross-origin の候補では replace が効かず
+  ;; **path が URL 丸ごとになり、どの Disallow にも前方一致しない** ——
+  ;; つまり判定が常に「許可」に倒れ、別ホストの robots.txt は一度も読まれなかった
+  ;; （実測 2026-08-26: TKC 会員事務所の窓口が cms.tkcnf.com に在った）。
+  ;; **拒否できない検査は、検査していないのと同じ値を返す。**
+  ;; 判定は `site-probe/blocked?*`（origin ごとに robots を引いてキャッシュする）に
+  ;; 寄せた。probe 全体は寄せていない —— 直したのは拒否できなかった 1 点だけ。
+  (let [org (cp/origin site-url)]
+    (-> (probe/blocked?* robots-cache site-url)
+      (.then (fn [seed-blocked?]
+       (if seed-blocked?
+         {:status :robots-disallowed}
       (-> (fetch-text site-url 20000)
           (.then
            (fn [[hstatus home]]
@@ -151,7 +164,6 @@
              ;; `/company/information` が本物の窓口を押しのけた）。
              (let [candidates (->> (concat (cp/discover-contact-links home site-url)
                                            (map #(str org %) cp/common-contact-paths))
-                                   (remove blocked?)
                                    cp/rank-contact-candidates
                                    (take 8)
                                    vec)]
@@ -161,7 +173,11 @@
                                    (if found
                                      found
                                      (-> (sleep delay-ms)
-                                         (.then (fn [] (fetch-text url 20000)))
+                                         ;; **候補ごとに、その URL のホストの robots で判定する。**
+                                         ;; 事前の一括 filter では cross-origin を判定できなかった。
+                                         (.then (fn [] (probe/blocked?* robots-cache url)))
+                                         (.then (fn [blocked?]
+                                                  (if blocked? [nil nil nil] (fetch-text url 20000))))
                                          ;; **応答した URL を載せる。** リダイレクト先が
                                          ;; 実際の窓口なので、要求した URL を台帳に書くと
                                          ;; 次に開いた人が 301 を踏む。
@@ -179,7 +195,7 @@
                               (if found
                                 (assoc found :status :ok :home-html home)
                                 {:status :no-contact-point :home-html home
-                                 :note (str "probed " (count candidates) " candidate path(s)")})))))))))))) 
+                                 :note (str "probed " (count candidates) " candidate path(s)")}))))))))))))))) 
 
 (defn- observe
   "registry レコード -> observation map（`cp/->record` に渡す形）。
@@ -193,8 +209,8 @@
         url-source (if reg-url :gbizinfo :operator-supplied)]
     (if-not site
       (js/Promise.resolve {:status :no-website :observed-at (now)})
-      (-> (fetch-text (str (cp/origin site) "/robots.txt") 10000)
-          (.then (fn [[_ robots]] (probe-contact site (or robots "") delay-ms)))
+      ;; robots は `site-probe/blocked?*` が origin ごとに引く。ここでは cache を渡すだけ。
+      (-> (probe-contact site robots-cache delay-ms)
           (.then (fn [{:keys [status contact-url html home-html note]}]
                    (let [pages (remove nil? [html home-html])
                          emails (->> pages (mapcat cp/extract-emails) distinct vec)]
