@@ -38,6 +38,7 @@
   (:require [clojure.string :as str]
             [clojure.edn :as edn]
             [kotoba.property.contact-point :as cp]
+            [kotoba.property.site-probe :as probe]
             [kotoba.property.eu-contact :as eu]
             [kotoba.property.bulk-csv :as csv]
             ["fs" :as fs]))
@@ -55,6 +56,8 @@
   [code msg]
   (js/console.error msg)
   (.exit js/process code))
+
+(def ^{:doc "origin -> robots.txt 本文。プロセス全体で 1 つ。"} robots-cache (atom {}))
 
 (defn- now [] (.toISOString (js/Date.)))
 (defn- sleep [ms] (js/Promise. (fn [res] (js/setTimeout res ms))))
@@ -89,12 +92,17 @@
 
 (defn- probe-contact
   "homepage を起点に連絡点を探す。robots.txt に拒まれたパスには行かない。"
-  [site-url robots delay-ms]
-  (let [org (cp/origin site-url)
-        blocked? (fn [u] (let [p (str/replace (str u) (re-pattern (str "^" org)) "")]
-                           (cp/robots-disallows? robots cp/user-agent (if (str/blank? p) "/" p))))]
-    (if (blocked? site-url)
-      (js/Promise.resolve {:status :robots-disallowed})
+  [site-url robots-cache delay-ms]
+  ;; ⚠ 以前は**種の origin の robots だけ**で判定し、path を `^org` の str/replace で
+  ;; 切り出していた。cross-origin の候補では replace が効かず **path が URL 丸ごとに
+  ;; なり、どの Disallow にも前方一致しない** —— 判定が常に「許可」に倒れ、別ホストの
+  ;; robots.txt は一度も読まれなかった。**拒否できない検査は、検査していないのと
+  ;; 同じ値を返す。** 判定は `site-probe/blocked?*`（origin ごとに引いてキャッシュ）へ。
+  (let [org (cp/origin site-url)]
+    (-> (probe/blocked?* robots-cache site-url)
+      (.then (fn [seed-blocked?]
+       (if seed-blocked?
+         {:status :robots-disallowed}
       (-> (fetch-text site-url 20000)
           (.then
            (fn [[hstatus home]]
@@ -104,7 +112,6 @@
                ;; 順序が精度そのものになる。
                (let [candidates (->> (concat (cp/discover-contact-links home site-url eu/vocabulary)
                                              (map #(str org %) eu/common-contact-paths))
-                                     (remove blocked?)
                                      (#(cp/rank-contact-candidates % eu/vocabulary))
                                      (take 8)
                                      vec)]
@@ -114,7 +121,10 @@
                                    (if found
                                      found
                                      (-> (sleep delay-ms)
-                                         (.then (fn [] (fetch-text url 20000)))
+                                         ;; **候補ごとに、その URL のホストの robots で判定する。**
+                                         (.then (fn [] (probe/blocked?* robots-cache url)))
+                                         (.then (fn [blocked?]
+                                                  (if blocked? [nil nil nil] (fetch-text url 20000))))
                                          (.then (fn [[st body final-url]]
                                                   (when (and (= 200 st) body
                                                              (cp/contact-page? body eu/contact-text-re))
@@ -128,7 +138,7 @@
                               (if found
                                 (assoc found :status :ok :home-html home)
                                 {:status :no-contact-point :home-html home
-                                 :note (str "probed " (count candidates) " candidate path(s)")}))))))))))))
+                                 :note (str "probed " (count candidates) " candidate path(s)")})))))))))))))))
 
 (defn- observe
   "法人 -> observation map（`eu-contact/->record` に渡す形）。
@@ -141,8 +151,8 @@
   (let [site (cp/normalise-url (:url org))]
     (if-not site
       (js/Promise.resolve {:status :no-website :observed-at (now)})
-      (-> (fetch-text (str (cp/origin site) "/robots.txt") 10000)
-          (.then (fn [[_ robots]] (probe-contact site (or robots "") delay-ms)))
+      ;; robots は `site-probe/blocked?*` が origin ごとに引く。cache を渡すだけ。
+      (-> (probe-contact site robots-cache delay-ms)
           (.then (fn [{:keys [status contact-url html home-html note]}]
                    (let [pages (remove nil? [html home-html])
                          emails (->> pages (mapcat eu/extract-emails) distinct vec)]
