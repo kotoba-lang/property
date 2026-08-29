@@ -1,55 +1,52 @@
 (ns kotoba.query-test
   (:require [clojure.test :refer [deftest is]]
-            [datascript.core :as d]
-            [kotoba.property.ownership :as ownership]))
+            [kotoba.property.ownership :as ownership]
+            [kotoba.property.query-runtime :as qr]))
 
-(deftest public-ubo-query-runs-on-datascript
-  (let [db (d/db-with (d/empty-db)
-                      [{:ubo/id "companies-house-psc:00000006:abc"
-                        :ubo/company-id "00000006"
-                        :ubo/person-id "companies-house-psc:abc"
-                        :ubo/person-name "Example Person"
-                        :ubo/control :ownership-of-shares-25-to-50-percent
-                        :ubo/source "companies-house-psc"
-                        :ubo/observed-at "2026-07-10T00:00:00Z"
-                        :ubo/disclosure :public}])]
+(deftest public-ubo-query-runs-on-datalog
+  (let [db (qr/db [{:ubo/id "companies-house-psc:00000006:abc"
+                    :ubo/company-id "00000006"
+                    :ubo/person-id "companies-house-psc:abc"
+                    :ubo/person-name "Example Person"
+                    :ubo/control :ownership-of-shares-25-to-50-percent
+                    :ubo/source "companies-house-psc"
+                    :ubo/observed-at "2026-07-10T00:00:00Z"
+                    :ubo/disclosure :public}])]
     (is (= #{["companies-house-psc:00000006:abc"
               "Example Person"
-              :ownership-of-shares-25-to-50-percent
+              "ownership-of-shares-25-to-50-percent"
               "companies-house-psc"
               "2026-07-10T00:00:00Z"]}
-           (d/q ownership/public-ubo-by-company-query db "00000006")))))
+           (qr/q db ownership/public-ubo-by-company-query "00000006")))))
 
 (deftest parcel-query-joins-corporate-owner-to-ubo
-  (let [db (d/db-with (d/empty-db)
-                      [{:ownership/id "hmlr:AB123:00000006"
-                        :ownership/parcel "GB-HMLR:AB123"
-                        :ownership/holder "Example Holdings Ltd"
-                        :ownership/holder-id "00000006"}
-                       {:ubo/id "companies-house-psc:00000006:abc"
-                        :ubo/company-id "00000006"
-                        :ubo/person-name "Example Person"
-                        :ubo/control :ownership-of-shares-25-to-50-percent
-                        :ubo/source "companies-house-psc"
-                        :ubo/observed-at "2026-07-10T00:00:00Z"
-                        :ubo/disclosure :public}])]
+  (let [db (qr/db [{:ownership/id "hmlr:AB123:00000006"
+                    :ownership/parcel "GB-HMLR:AB123"
+                    :ownership/holder "Example Holdings Ltd"
+                    :ownership/holder-id "00000006"}
+                   {:ubo/id "companies-house-psc:00000006:abc"
+                    :ubo/company-id "00000006"
+                    :ubo/person-name "Example Person"
+                    :ubo/control :ownership-of-shares-25-to-50-percent
+                    :ubo/source "companies-house-psc"
+                    :ubo/observed-at "2026-07-10T00:00:00Z"
+                    :ubo/disclosure :public}])]
     (is (= #{["Example Holdings Ltd" "00000006" "Example Person"
-              :ownership-of-shares-25-to-50-percent "companies-house-psc"
+              "ownership-of-shares-25-to-50-percent" "companies-house-psc"
               "2026-07-10T00:00:00Z"]}
-           (d/q ownership/public-ownership-and-ubo-by-parcel-query
-                db "GB-HMLR:AB123")))))
+           (qr/q db ownership/public-ownership-and-ubo-by-parcel-query
+                 "GB-HMLR:AB123")))))
 
 (deftest public-claim-query-returns-source-identifier
-  (let [db (d/db-with (d/empty-db)
-                      [{:ownership/id "nyc-owned-properties:1017900009.0"
-                        :ownership/parcel "US-NY-NYC:BBL:1017900009.0"
-                        :ownership/holder "City of New York / HPD"
-                        :ownership/source "nyc-owned-properties"
-                        :ownership/observed-at "2026-07-10T00:00:00Z"
-                        :ownership/disclosure :public}])]
+  (let [db (qr/db [{:ownership/id "nyc-owned-properties:1017900009.0"
+                    :ownership/parcel "US-NY-NYC:BBL:1017900009.0"
+                    :ownership/holder "City of New York / HPD"
+                    :ownership/source "nyc-owned-properties"
+                    :ownership/observed-at "2026-07-10T00:00:00Z"
+                    :ownership/disclosure :public}])]
     (is (= #{["nyc-owned-properties:1017900009.0"
               "City of New York / HPD"
               "nyc-owned-properties"
               "2026-07-10T00:00:00Z"]}
-           (d/q ownership/public-claims-by-parcel-query
-                db "US-NY-NYC:BBL:1017900009.0")))))
+           (qr/q db ownership/public-claims-by-parcel-query
+                 "US-NY-NYC:BBL:1017900009.0")))))

@@ -1,7 +1,7 @@
 (ns query-corporate-parent
-  "Run a DataScript Datalog query over nbb-collected GLEIF Level 2 data."
+  "Run a Datalog query over nbb-collected GLEIF Level 2 data."
   (:require [cljs.reader :as reader]
-            [kotoba.property.datascript-runtime :as runtime]
+            [kotoba.property.query-runtime :as runtime]
             ["fs" :as fs]))
 
 (def default-store "var/kotoba-property/gleif-level-2.edn")
@@ -26,7 +26,7 @@
     (let [state (reader/read-string (.readFileSync fs store "utf8"))
           records (concat (vals (:corporate-relations state)) (vals (:lei-records state)))
           db (runtime/db records)]
-      (doseq [row (js->clj (.q runtime/datasource query db lei))]
+      (doseq [row (runtime/q db query lei)]
         (println (pr-str (zipmap [:legal-entity/parent-lei :legal-entity/parent-name
                                   :corporate-relation/type :corporate-relation/observed-at]
                                  row)))))))

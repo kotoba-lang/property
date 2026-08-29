@@ -1,7 +1,7 @@
 (ns query-property-parent
-  "Join HMLR corporate property ownership to a GLEIF direct parent in nbb DataScript."
+  "Join HMLR corporate property ownership to a GLEIF direct parent via datalog."
   (:require [cljs.reader :as reader]
-            [kotoba.property.datascript-runtime :as runtime]
+            [kotoba.property.query-runtime :as runtime]
             ["fs" :as fs]))
 
 (def default-property-store "var/kotoba-property/gb-ubo.edn")
@@ -39,7 +39,7 @@
                           (vals (:corporate-relations gleif-state))
                           (vals (:lei-records gleif-state)))
           db (runtime/db records)]
-      (doseq [row (js->clj (.q runtime/datasource query db parcel))]
+      (doseq [row (runtime/q db query parcel)]
         (println (pr-str (zipmap [:ownership/holder :ownership/company-number
                                   :legal-entity/parent-lei :legal-entity/parent-name
                                   :corporate-relation/type] row)))))))

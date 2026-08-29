@@ -1,7 +1,7 @@
 (ns query-source-audit
-  "Run a DataScript audit query over an nbb collector state file."
+  "Run a Datalog audit query over an nbb collector state file."
   (:require [cljs.reader :as reader]
-            [kotoba.property.datascript-runtime :as runtime]
+            [kotoba.property.query-runtime :as runtime]
             ["fs" :as fs]))
 
 (def query
@@ -19,7 +19,7 @@
                   "var/kotoba-property/nyc-owned-properties.edn")
         state (reader/read-string (.readFileSync fs store "utf8"))
         db (runtime/db (vals (:source-state state)))]
-    (doseq [row (js->clj (.q runtime/datasource query db))]
+    (doseq [row (runtime/q db query)]
       (println (pr-str (zipmap [:source/id :source/content-sha256 :source/retrieved-at
                                 :source/record-count :source/added-count :source/removed-count]
                                row))))))

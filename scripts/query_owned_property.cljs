@@ -1,7 +1,7 @@
 (ns query-owned-property
   "Credential-free EDN query runner for nbb-collected NYC public ownership."
   (:require [cljs.reader :as reader]
-            [kotoba.property.datascript-runtime :as runtime]
+            [kotoba.property.query-runtime :as runtime]
             ["fs" :as fs]))
 
 (def default-store "var/kotoba-property/nyc-owned-properties.edn")
@@ -26,7 +26,7 @@
       (js/process.exit 2))
     (let [state (reader/read-string (.readFileSync fs store "utf8"))
           db (runtime/db (vals (:ownership-records state)))]
-      (doseq [row (js->clj (.q runtime/datasource query db parcel))]
+      (doseq [row (runtime/q db query parcel)]
         (println (pr-str (zipmap [:ownership/id :ownership/holder :ownership/source
                                   :ownership/observed-at] row)))))))
 
