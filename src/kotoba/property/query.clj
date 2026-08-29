@@ -1,8 +1,8 @@
 (ns kotoba.property.query
-  "Query local governed UBO state with DataScript."
+  "Query local governed UBO state with datalog."
   (:require [clojure.edn :as edn]
-            [datascript.core :as d]
-            [kotoba.property.ownership :as ownership]))
+            [kotoba.property.ownership :as ownership]
+            [kotoba.property.query-runtime :as qr]))
 
 (def default-store "var/kotoba-property/gb-ubo.edn")
 
@@ -24,20 +24,18 @@
   (let [state (edn/read-string (slurp path))
         records (concat (vals (:ownership-records state))
                         (vals (:ubo-records state)))]
-    (d/db-with (d/empty-db (edn/read-string
-                             (slurp "resources/property/open_data/datascript-schema.edn")))
-               records)))
+    (qr/db records)))
 
 (defn -main [& args]
   (let [{:keys [company parcel ownership-parcel store]} (parse-args args)]
     (when-not (or company parcel ownership-parcel)
       (binding [*out* *err*] (println (usage))
-      (System/exit 2)))
+      (System/exit 2))
     (let [db (db-from-store store)
           rows (cond
-                 ownership-parcel (d/q ownership/public-claims-by-parcel-query db ownership-parcel)
-                 parcel (d/q ownership/public-ownership-and-ubo-by-parcel-query db parcel)
-                 :else (d/q ownership/public-ubo-by-company-query db company))]
+                 ownership-parcel (qr/q db ownership/public-claims-by-parcel-query ownership-parcel)
+                 parcel (qr/q db ownership/public-ownership-and-ubo-by-parcel-query parcel)
+                 :else (qr/q db ownership/public-ubo-by-company-query company))]
       (doseq [row (sort-by second rows)]
         (println
          (pr-str

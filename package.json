@@ -1,28 +1,10 @@
 {
-  "name": "@kotoba-lang/property-runtime",
+  "name": "kotoba-property",
   "private": true,
-  "type": "module",
-  "dependencies": {
-    "datascript": "1.7.8"
-  },
   "scripts": {
-    "collect:nyc": "nbb -cp src scripts/collect_nyc.cljs",
-    "collect:gleif": "nbb -cp src scripts/collect_gleif.cljs",
-    "collect:gleif-jurisdiction": "nbb -cp src scripts/collect_gleif_jurisdiction.cljs",
-    "query:coverage": "nbb -cp src scripts/query_coverage.cljs",
-    "verify:coverage-gate": "nbb -cp src scripts/verify_coverage_gate.cljs",
-    "query:parent": "nbb -cp src scripts/query_corporate_parent.cljs",
-    "query:audit": "nbb -cp src scripts/query_source_audit.cljs",
-    "collect:gleif-golden-copy": "nbb -cp src scripts/collect_gleif_golden_copy.cljs",
-    "collect:gleif-rr-golden-copy": "nbb -cp src scripts/collect_gleif_rr_golden_copy.cljs",
-    "project:gleif": "nbb -cp src scripts/project_gleif_corpus.cljs",
-    "project:gleif-rr": "nbb -cp src scripts/project_gleif_rr_corpus.cljs",
-    "query:gleif-corpus": "nbb -cp src scripts/query_gleif_corpus.cljs",
-    "export:ownership-datoms": "nbb -cp src scripts/export_ownership_datoms.cljs",
-    "collect:contact-points": "nbb -cp src scripts/collect_contact_points.cljs",
-    "export:lead-sheet": "nbb -cp src scripts/export_lead_sheet.cljs",
-    "collect:intent-pool": "nbb -cp src scripts/collect_intent_pool.cljs",
-    "audit:contact-forms": "nbb -cp src scripts/audit_contact_forms.cljs",
-    "report:contact-forms": "nbb -cp src scripts/report_contact_forms.cljs"
+    "query:owned": "nbb scripts/query_owned_property.cljs",
+    "query:corporate-parent": "nbb scripts/query_corporate_parent.cljs",
+    "query:property-parent": "nbb scripts/query_property_parent.cljs",
+    "query:source-audit": "nbb scripts/query_source_audit.cljs"
   }
 }
