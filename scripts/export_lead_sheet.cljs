@@ -25,7 +25,7 @@
    usage:
      nbb -cp src scripts/export_lead_sheet.cljs --in <edn> --out <tsv> [--include-excluded]"
   (:require [clojure.string :as str]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             ["fs" :as fs]))
 
 (def argv (vec *command-line-args*))

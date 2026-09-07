@@ -41,7 +41,7 @@
        --sites <tsv> --out <edn> [--limit N] [--concurrency N] [--delay-ms N]
        [--discovery web-search] [--merge-into <edn>]"
   (:require [clojure.string :as str]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             [kotoba.property.contact-point :as cp]
             [kotoba.property.site-probe :as probe]
             ["fs" :as fs]))

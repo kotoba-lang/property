@@ -4,7 +4,7 @@
    The API key is supplied only through COMPANIES_HOUSE_API_KEY. The output is
    local governed state, not a repository artifact."
   (:require [clojure.data.json :as json]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             [clojure.java.io :as io]
             [clojure.string :as str]
             [kotoba.property.ownership :as ownership])

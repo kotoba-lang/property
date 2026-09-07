@@ -1,7 +1,7 @@
 (ns kotoba.property.nyc
   "Collect non-personal NYC-owned property records from NYC Open Data."
   (:require [clojure.data.json :as json]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             [clojure.java.io :as io]
             [clojure.java.shell :as shell]
             [kotoba.property.ownership :as ownership])
