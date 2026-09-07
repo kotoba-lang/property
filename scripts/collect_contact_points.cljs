@@ -40,7 +40,7 @@
 
    Requires GBIZINFO_TOKEN（env か Keychain `gbizinfo-api-token`）。無ければ exit 3。"
   (:require [clojure.string :as str]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             [kotoba.property.contact-point :as cp]
             [kotoba.property.site-probe :as probe]
             ["child_process" :as cp-node]

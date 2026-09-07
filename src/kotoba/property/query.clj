@@ -1,6 +1,6 @@
 (ns kotoba.property.query
   "Query local governed UBO state with datalog."
-  (:require [clojure.edn :as edn]
+  (:require [kotoba.lang.edn :as edn]
             [kotoba.property.ownership :as ownership]
             [kotoba.property.query-runtime :as qr]))
 

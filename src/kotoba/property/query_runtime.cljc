@@ -4,7 +4,7 @@
   Replaces DataScript (JVM `datascript.core` and npm `datascript`) with
   `kotoba-lang/datalog`. Attribute names and keyword values are stored as
   bare strings so the existing nbb script query strings keep working unchanged."
-  (:require [clojure.edn :as edn]
+  (:require [kotoba.lang.edn :as edn]
             [datalog.core :as dl]
             [datalog.index :as index]))
 

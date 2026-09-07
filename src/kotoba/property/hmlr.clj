@@ -1,7 +1,7 @@
 (ns kotoba.property.hmlr
   "Import licensed HMLR CCOD/OCOD CSV data into local governed EDN state."
   (:require [clojure.data.csv :as csv]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             [clojure.java.io :as io]
             [kotoba.property.ownership :as ownership]))
 

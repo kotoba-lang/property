@@ -26,7 +26,7 @@
 
    exit: 0 成功 / 2 答えられなかった（1 件も分類できなかった）/ 3 引数不足。"
   (:require [clojure.string :as str]
-            [clojure.edn :as edn]
+            [kotoba.lang.edn :as edn]
             [kotoba.property.contact-point :as cp]
             [kotoba.property.contact-form :as cf]
             [kotoba.property.eu-contact :as eu]
