@@ -98,3 +98,34 @@
     (let [t (str "一般社団法人日本なんとか協会\n"
                  "貸借対照表の要旨(令和８年３月31日現在)\n資 本 金 1,000\n")]
       (is (= 1 (count (kk/parse-section t "2026-08-18")))))))
+
+(deftest a-representative-line-is-never-read-as-an-address
+  ;; Both notices are the real shape that got two people's names into the
+  ;; committed projection (published 2026-08-21 and 2026-08-25, found
+  ;; 2026-09-08 by jp-go-npb-kanpou's projections gate). The line above the
+  ;; company name is the representative, and `address-re` accepted it because
+  ;; 田村 and 上村 contain 村.
+  (doseq [[rep name-line] [["代表取締役 田村 圭二" "株式会社ｍ．ｍ"]
+                           ["代表取締役 上村 昌志" "株式会社ハルモニア"]]]
+    (let [t (str/join "\n"
+                      ["第 40 期 決 算 公 告"
+                       "令和８年８月21日"
+                       rep
+                       name-line
+                       "貸借対照表の要旨(令和７年12月31日現在)"
+                       "資 本 金 80,000"])
+          recs (vec (kk/parse-section t "2026-08-21"))]
+      (is (= 1 (count recs)) "the notice is still a record — only the address is dropped")
+      (let [r (first recs)]
+        (is (= name-line (:company/legal-name r)))
+        (is (= "2025-12-31" (:company/fiscal-year-end r)))
+        (is (nil? (:company/address r)) "a person is not an address")
+        (testing "and the name appears in no other field either"
+          (is (not-any? #(re-find #"田村|圭二|上村|昌志" (str %)) (vals r))))))))
+
+(deftest an-ordinary-address-still-survives-the-officer-guard
+  ;; The control for the guard above: the reason to state it is that a rule
+  ;; which rejected both would pass the test above while emptying the field.
+  (let [recs (vec (kk/parse-section section "2026-08-18"))]
+    (is (= "福島県郡山市字外河原８番地３" (:company/address (first recs))))
+    (is (= "茨城県土浦市東真鍋町９番35号" (:company/address (second recs))))))
