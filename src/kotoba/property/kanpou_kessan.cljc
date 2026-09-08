@@ -28,7 +28,8 @@
    公告には代表取締役の氏名が載る。`gbizinfo/basic-record` と同じ理由で捨てる。
 
    出典：官報（国立印刷局）https://kanpou.npb.go.jp/ を加工して作成"
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [kotoba.property.kanpou-officer :as officer]))
 
 (def source-id "kanpou-kessan-koukoku")
 (def authority-id "JP/NPB-Kanpou")
@@ -134,29 +135,10 @@
   ;; a right one, which is the failure this whole parser is written against.
   #"(代表取締役|取締役|代表社員|業務執行社員|代表理事|理事長|理事|監事|組合長|会長|社長|専務|常務|執行役|清算人|代表者|代表)")
 
-(def ^:private officer-with-name-re
-  ;; A title alone is not a representative. 官報 is set in two columns and the
-  ;; PDF text stream splits long lines, so `代表取締役社長 中澤` / `俊` arrives
-  ;; as two lines; recording the first would store a surname with the given
-  ;; name silently missing -- a wrong value no later reader could detect.
-  ;;
-  ;; So the name after the title must be either two whitespace-separated tokens
-  ;; (田村 圭二) or a single run of three or more characters (杉山公美弥, which
-  ;; real notices print without a space). A two-character single token is
-  ;; refused: it is what a split surname looks like, and this parser prefers a
-  ;; missing field to an amputated name. A genuine two-character full name is
-  ;; lost by that rule, and so is a line with no space at all between title and
-  ;; name -- both are the side of the trade this dataset should be on, because
-  ;; the failure they avoid is a wrong value that reads as a right one.
-  ;;
-  ;; The whitespace after the title is REQUIRED for a second reason. Without it
-  ;; `代表取締役社長 中澤` parses as the title `代表取締役` followed by the two
-  ;; tokens `社長` and `中澤`: the rule meant to refuse a split name accepts it
-  ;; by reading the rest of the title as a surname. Measured 2026-09-08 -- the
-  ;; first version did exactly that, and the test written to catch it passed,
-  ;; because its fixture put the split fragment one line further away than the
-  ;; parser ever looks.
-  #"(代表取締役|取締役|代表社員|業務執行社員|代表理事|理事長|理事|監事|組合長|会長|社長|専務|常務|執行役|清算人|代表者)[^\s　]{0,4}[\s　]+(?:[一-龥ぁ-んァ-ヶ]{1,5}[\s　]+[一-龥ぁ-んァ-ヶ]{1,5}|[一-龥ぁ-んァ-ヶ]{3,10})$")
+(def ^:private officer-title-re
+  ;; 役職語だけ。「完全な氏名が続いているか」と「折り返しで割れた行の連結」は
+  ;; `kanpou-officer` が持つ —— 決算公告と解散公告で同じ判断をするため。
+  #"(代表取締役|取締役|代表社員|業務執行社員|代表理事|理事長|理事|監事|組合長|会長|社長|専務|常務|執行役|清算人|代表者)")
 
 (def ^:private page-furniture-re
   ;; The two-column layout interleaves running heads into the text stream.
@@ -244,11 +226,17 @@
                            (not (re-find officer-line-re line-above))
                            (>= (count line-above) 5))
                   line-above)
-        ;; Only the line above the name, and only when it carries a whole name.
-        ;; The representative printed BELOW the name is the common shape and is
-        ;; not collected here: it is the one the text stream splits.
-        representative (when (and line-above (re-find officer-with-name-re line-above))
-                         line-above)
+        ;; 代表者は商号の**下**に来るのが普通で、上に来る公告もある。実測
+        ;; 2026-09-08、号外第200号の 2 日分 74 レコードでは上に来た行は 0 件
+        ;; だった —— 上だけを見ていた最初の版は、住所欄の誤りは直したが代表者を
+        ;; ほとんど 1 件も集めなかった。
+        ;;
+        ;; 下の行は折り返しで割れるので連結を許す。上の行は許さない ——
+        ;; そこで連結すれば「続き」として商号を吸い込む。
+        representative (or (when name-idx
+                             (officer/officer-line lines (inc name-idx) officer-title-re))
+                           (when line-above
+                             (officer/whole-officer-line line-above officer-title-re)))
         bs-date (wareki->date date-text)
         capital (some-> (re-find #"資\s*本\s*金\s*([\d,]+)" (str body)) second (str/replace "," ""))]
     (when (and name bs-date)

@@ -64,8 +64,11 @@
         (is (= "30000000" (:company/capital-stock-yen a))))
       (is (= "株式会社本田" (:company/legal-name b)))
       (is (= 6 (:company/fiscal-year-end-month b)))
-      (testing "the representative director's name never becomes a field"
-        (is (not-any? #(re-find #"岡島|中澤" (str %)) (vals b)))))))
+      (testing "the representative is a field now (owner decision 2026-09-08),
+                and the 後株 notice is the split shape reassembled: the text
+                stream breaks `代表取締役社長 中澤` from its given name `俊`"
+        (is (= "代表取締役社長 中澤 俊" (:company/representative a)))
+        (is (= "代表取締役 岡島 正和" (:company/representative b)))))))
 
 (deftest a-block-without-a-balance-sheet-date-is-not-a-record
   (testing "the fiscal year end is the only reason this dataset exists — a row
