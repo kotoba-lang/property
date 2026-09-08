@@ -49,6 +49,33 @@ in `var/` or in a governed database. Companies House PSC and HM Land Registry
 CCOD/OCOD extracts are **not** permitted in `data/` — they are licensed or
 person-adjacent.
 
+## 官報 (NPB, JP) — officers named in a company's own statutory notice
+
+Owner decision 2026-09-08: **names printed in a corporate public notice are
+public corporate information and this workspace collects them.** A 決算公告
+names its 代表取締役 because the Companies Act requires the notice; a 落札公示
+names the 契約責任者 for the same kind of reason. Withholding them from the
+projection does not protect anyone — the gazette is the publication — and it
+loses the field a reader needs to tell two companies of the same name apart.
+
+Two things this decision does **not** move.
+
+1. It does not reopen the rows in the table above. Companies House PSC, HM Land
+   Registry proprietor names and EU/EEA general-public UBO registers are refused
+   for licence terms and a CJEU ruling, not because a person is named. A policy
+   about gazette officers says nothing about those.
+2. A person still goes in a field that is about the person:
+   `:company/representative`, `:award/contract-officer`. Never
+   `:company/address`, never `:grant/ministry`. That rule is not about privacy —
+   it is that a wrong value which reads as a right one is the failure this
+   collector is written against, and `"代表取締役 田村 圭二"` sitting in an
+   address column is exactly that. Measured 2026-09-08: two such values were in
+   the committed projection for two and a half weeks.
+
+The parsers refuse a name they cannot read whole. 官報 is set in two columns and
+the PDF text stream splits long lines, so `代表取締役社長 中澤` / `俊` arrives as
+two; the field is left empty rather than filled with an amputated surname.
+
 ## 法人番号 (NTA, JP) — permitted to collect here, published elsewhere
 
 Reviewed 2026-08-18. The National Tax Agency's 全件データ carries no

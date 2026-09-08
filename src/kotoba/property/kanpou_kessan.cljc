@@ -126,12 +126,37 @@
   ;; `:company/address "代表取締役 田村 圭二"` and `"代表取締役 上村 昌志"`,
   ;; published 2026-08-21 and 2026-08-25. Both got in through 村.
   ;;
-  ;; The rule this restores is the one kanpou-chotatsu already states: a public
-  ;; notice being public is not a reason to carry a person's name in a field
-  ;; that is not about them. Here the address is simply dropped -- the company
-  ;; name, fiscal year end and capital are what the dataset is for, and a record
-  ;; without an address is complete for that purpose.
+  ;; The line is kept, as `:company/representative` -- an officer named in a
+  ;; company's own statutory notice is public corporate information and this
+  ;; workspace collects it (owner decision 2026-09-08, DATA-GOVERNANCE.md).
+  ;; What this regex is for is the OTHER half of that: a person is not an
+  ;; address. Putting them in `:company/address` is a wrong value that reads as
+  ;; a right one, which is the failure this whole parser is written against.
   #"(代表取締役|取締役|代表社員|業務執行社員|代表理事|理事長|理事|監事|組合長|会長|社長|専務|常務|執行役|清算人|代表者|代表)")
+
+(def ^:private officer-with-name-re
+  ;; A title alone is not a representative. 官報 is set in two columns and the
+  ;; PDF text stream splits long lines, so `代表取締役社長 中澤` / `俊` arrives
+  ;; as two lines; recording the first would store a surname with the given
+  ;; name silently missing -- a wrong value no later reader could detect.
+  ;;
+  ;; So the name after the title must be either two whitespace-separated tokens
+  ;; (田村 圭二) or a single run of three or more characters (杉山公美弥, which
+  ;; real notices print without a space). A two-character single token is
+  ;; refused: it is what a split surname looks like, and this parser prefers a
+  ;; missing field to an amputated name. A genuine two-character full name is
+  ;; lost by that rule, and so is a line with no space at all between title and
+  ;; name -- both are the side of the trade this dataset should be on, because
+  ;; the failure they avoid is a wrong value that reads as a right one.
+  ;;
+  ;; The whitespace after the title is REQUIRED for a second reason. Without it
+  ;; `代表取締役社長 中澤` parses as the title `代表取締役` followed by the two
+  ;; tokens `社長` and `中澤`: the rule meant to refuse a split name accepts it
+  ;; by reading the rest of the title as a surname. Measured 2026-09-08 -- the
+  ;; first version did exactly that, and the test written to catch it passed,
+  ;; because its fixture put the split fragment one line further away than the
+  ;; parser ever looks.
+  #"(代表取締役|取締役|代表社員|業務執行社員|代表理事|理事長|理事|監事|組合長|会長|社長|専務|常務|執行役|清算人|代表者)[^\s　]{0,4}[\s　]+(?:[一-龥ぁ-んァ-ヶ]{1,5}[\s　]+[一-龥ぁ-んァ-ヶ]{1,5}|[一-龥ぁ-んァ-ヶ]{3,10})$")
 
 (def ^:private page-furniture-re
   ;; The two-column layout interleaves running heads into the text stream.
@@ -213,12 +238,17 @@
                                          i))
                                      lines))
         name (when name-idx (nth lines name-idx))
-        address (when (and name-idx (pos? name-idx))
-                  (let [a (nth lines (dec name-idx))]
-                    (when (and (re-find address-re a)
-                               (not (re-find officer-line-re a))
-                               (>= (count a) 5))
-                      a)))
+        line-above (when (and name-idx (pos? name-idx)) (nth lines (dec name-idx)))
+        address (when (and line-above
+                           (re-find address-re line-above)
+                           (not (re-find officer-line-re line-above))
+                           (>= (count line-above) 5))
+                  line-above)
+        ;; Only the line above the name, and only when it carries a whole name.
+        ;; The representative printed BELOW the name is the common shape and is
+        ;; not collected here: it is the one the text stream splits.
+        representative (when (and line-above (re-find officer-with-name-re line-above))
+                         line-above)
         bs-date (wareki->date date-text)
         capital (some-> (re-find #"資\s*本\s*金\s*([\d,]+)" (str body)) second (str/replace "," ""))]
     (when (and name bs-date)
@@ -230,6 +260,7 @@
                :company/fiscal-year-end (iso-date bs-date)}
         period (assoc :kessan/period period)
         address (assoc :company/address address)
+        representative (assoc :company/representative representative)
         published-at (assoc :kessan/published-at published-at)
         ;; 千円単位で刷られるので、そのまま円として読ませない。
         capital (assoc :company/capital-stock-yen (str (* 1000 (parse-int capital))))))))

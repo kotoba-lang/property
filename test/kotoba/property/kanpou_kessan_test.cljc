@@ -120,8 +120,33 @@
         (is (= name-line (:company/legal-name r)))
         (is (= "2025-12-31" (:company/fiscal-year-end r)))
         (is (nil? (:company/address r)) "a person is not an address")
-        (testing "and the name appears in no other field either"
-          (is (not-any? #(re-find #"田村|圭二|上村|昌志" (str %)) (vals r))))))))
+        (testing "the officer is kept, in the field that is about them --
+                  a name in a company's own statutory notice is public
+                  corporate information (owner decision 2026-09-08)"
+          (is (= rep (:company/representative r))))))))
+
+(deftest a-title-without-a-whole-name-is-not-collected
+  ;; 官報 is set in two columns and the PDF text stream splits long lines, so
+  ;; `代表取締役社長 中澤` / `俊` arrives as two. Recording the first would store
+  ;; a surname with the given name silently missing.
+  (let [t (str/join "\n"
+                    ["第 12 期 決 算 公 告"
+                     "令和８年８月21日"
+                     "代表取締役社長 中澤"
+                     "株式会社なにか"
+                     "貸借対照表の要旨(令和７年12月31日現在)"
+                     "資 本 金 10,000"])
+        r (first (kk/parse-section t "2026-08-21"))]
+    (is (= "株式会社なにか" (:company/legal-name r)))
+    (is (nil? (:company/representative r)) "a truncated name is worse than none")
+    (testing "and a whole name printed without a space is still collected"
+      (let [r2 (first (kk/parse-section
+                       (str/join "\n" ["第 12 期 決 算 公 告" "令和８年８月21日"
+                                       "代表取締役 杉山公美弥" "株式会社なにか"
+                                       "貸借対照表の要旨(令和７年12月31日現在)" "資 本 金 10,000"])
+                       "2026-08-21"))]
+        (is (= "代表取締役 杉山公美弥" (:company/representative r2)))))
+    (is (nil? (:company/address r)))))
 
 (deftest an-ordinary-address-still-survives-the-officer-guard
   ;; The control for the guard above: the reason to state it is that a rule

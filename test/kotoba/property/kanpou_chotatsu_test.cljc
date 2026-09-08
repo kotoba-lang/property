@@ -59,9 +59,11 @@
       (testing "和暦 8.6.8 は令和8年6月8日"
         (is (= "2026-06-08" (:grant/date r))))
       (is (= "長野自動車道 明科トンネル補強工事" (:grant/title r)))
-      (testing "発注機関は残すが、担当者の氏名は残さない"
+      (testing "発注機関の欄は組織名だけ。役職と氏名は契約責任者の欄が持つ"
         (is (= "東日本高速道路株式会社 関東支社" (:grant/ministry r)))
-        (is (not-any? #(re-find #"金田" (str %)) (vals r))))
+        (is (not (re-find #"金田" (str (:grant/ministry r)))))
+        (is (= "東日本高速道路株式会社 関東支社 支社長 金田 泰明"
+               (:award/contract-officer r))))
       (is (= "417" (:award/agency-code r))))))
 
 (deftest a-row-without-a-price-is-not-an-award
@@ -82,14 +84,29 @@
                    (marker 7) "37,775,023円\n")
           r (first (kc/parse-section sec "2026-08-18"))]
       (is (= "独立行政法人国立印刷局" (:grant/ministry r)))
-      (is (not-any? #(re-find #"鈴木|康晴" (str %)) (vals r)))))
+      (testing "組織名の欄には人を入れない。人は人の欄に入れる（オーナー判断
+                2026-09-08: 法人の公告に印刷された役職と氏名は収集してよい）"
+        (is (= "独立行政法人国立印刷局財務担当理事 鈴木 康晴"
+               (:award/contract-officer r))))))
   (testing "段組の running head が発注機関の位置に流れ込んだら、機関名にしない"
     (let [sec (str "契約責任者 月曜日\n"
                    (marker 1) "41 " (marker 6) "日本電計株式会社（東京都）"
                    (marker 7) "94,125,460円\n")
           r (first (kc/parse-section sec "2026-08-18"))]
       (is (nil? (:grant/ministry r)))
+      (testing "組織名が採れなかった行では契約責任者欄も持たない —— running head を
+                人の欄に置き換えるだけになる"
+        (is (nil? (:award/contract-officer r))))
       (is (= "日本電計株式会社" (:company/legal-name r))))))
+
+(deftest an-ordinary-responsible-line-is-not-duplicated
+  (testing "役職も氏名も付かない行は :grant/ministry だけを持つ"
+    (let [sec (str "契約責任者 株式会社かんぽ生命保険\n"
+                   (marker 1) "41 " (marker 6) "テスト株式会社（東京都）"
+                   (marker 7) "1,000円\n")
+          r (first (kc/parse-section sec "2026-08-18"))]
+      (is (= "株式会社かんぽ生命保険" (:grant/ministry r)))
+      (is (nil? (:award/contract-officer r))))))
 
 (deftest agency-cases-that-actually-appeared
   (testing "実際に committed data に入っていた 4 通り。どれも組織名だけを残す"
