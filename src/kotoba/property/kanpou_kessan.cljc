@@ -115,6 +115,24 @@
 (def ^:private address-re
   #"(都|道|府|県|市|区|郡|町|村)")
 
+(def ^:private officer-line-re
+  ;; The line before the company name is USUALLY the address, but in some
+  ;; notices it is the representative. `address-re` only asks whether one of
+  ;; nine characters appears anywhere in the line, and those characters are
+  ;; also ordinary in Japanese surnames -- 田村, 上村, 中島, 大川. So a line
+  ;; that is a person passes the address test on the strength of their name.
+  ;;
+  ;; Measured 2026-09-08: two records in the committed projection carried
+  ;; `:company/address "代表取締役 田村 圭二"` and `"代表取締役 上村 昌志"`,
+  ;; published 2026-08-21 and 2026-08-25. Both got in through 村.
+  ;;
+  ;; The rule this restores is the one kanpou-chotatsu already states: a public
+  ;; notice being public is not a reason to carry a person's name in a field
+  ;; that is not about them. Here the address is simply dropped -- the company
+  ;; name, fiscal year end and capital are what the dataset is for, and a record
+  ;; without an address is complete for that purpose.
+  #"(代表取締役|取締役|代表社員|業務執行社員|代表理事|理事長|理事|監事|組合長|会長|社長|専務|常務|執行役|清算人|代表者|代表)")
+
 (def ^:private page-furniture-re
   ;; The two-column layout interleaves running heads into the text stream.
   #"^(官|報|火曜日|月曜日|水曜日|木曜日|金曜日|土曜日|日曜日|\(号外第.*|令和\s+年.*|\s*)$")
@@ -197,7 +215,10 @@
         name (when name-idx (nth lines name-idx))
         address (when (and name-idx (pos? name-idx))
                   (let [a (nth lines (dec name-idx))]
-                    (when (and (re-find address-re a) (>= (count a) 5)) a)))
+                    (when (and (re-find address-re a)
+                               (not (re-find officer-line-re a))
+                               (>= (count a) 5))
+                      a)))
         bs-date (wareki->date date-text)
         capital (some-> (re-find #"資\s*本\s*金\s*([\d,]+)" (str body)) second (str/replace "," ""))]
     (when (and name bs-date)
