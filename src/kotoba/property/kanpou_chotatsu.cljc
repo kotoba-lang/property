@@ -130,7 +130,7 @@
    無いものはレコードにしない —— section 冒頭の掲載順序の凡例も同じ項番を持つので、
    それを弾く床でもある。社名が長すぎる行（1 行に複数落札者）は `nil` を返し、
    呼び出し側が数える。"
-  [fields {:keys [published-at agency agency-code]}]
+  [fields {:keys [published-at agency agency-code contract-officer]}]
   (let [[name address branch] (name+address (get fields 6))
         amount (amount-yen (get fields 7))]
     (when (and (not (str/blank? (str name)))
@@ -150,6 +150,13 @@
         true (put :company/address address)
         true (put :award/branch branch)
         true (put :grant/ministry agency)
+        ;; 契約責任者欄をそのまま。`:grant/ministry` は組織名だけに保つが、
+        ;; **落とすのではなく別の欄に置く** —— 法人の公告に印刷された役職と氏名は
+        ;; 公開された法人情報で、この workspace はそれを収集する（オーナー判断
+        ;; 2026-09-08、DATA-GOVERNANCE.md）。切り出した「人の部分」ではなく印刷
+        ;; されたままの 1 行を持つのは、どこで切るかを推測しないため —— 病院長 の
+        ;; 「長」のように、役職の一部が組織名の末尾と繋がって印刷される。
+        true (put :award/contract-officer contract-officer)
         true (put :award/agency-code agency-code)
         true (put :award/published-at published-at)))))
 
@@ -198,11 +205,12 @@
   [text published-at]
   (let [n (pua/normalize text)
         chunks (vec (str/split n (re-pattern (str pua/sep "1" pua/sep))))]
-    (loop [i 0 agency nil code nil acc []]
+    (loop [i 0 agency nil code nil officer nil acc []]
       (if (>= i (count chunks))
         acc
         (let [chunk (nth chunks i)
-              agency' (or (some-> (last (re-seq agency-re chunk)) second str/trim clean
+              raw-responsible (some-> (last (re-seq agency-re chunk)) second str/trim clean)
+              agency' (or (some-> raw-responsible
                                   (str/replace head-and-name-re "")
                                   (str/split officer-title-re) first
                                   (str/replace trailing-personal-name-re "")
@@ -213,14 +221,23 @@
                                                         (re-matches agency-furniture-re a))
                                             a)))
                           agency)
+              ;; 組織名と印刷された 1 行が違うときだけ持つ（普通の行で同じ値を
+              ;; 2 度書かないため）。組織名が採れなかった行 —— running head が
+              ;; 流れ込んだ「月曜日」など —— では持たない。
+              officer' (if (and raw-responsible agency'
+                                (not= raw-responsible agency')
+                                (str/starts-with? raw-responsible agency'))
+                         raw-responsible
+                         (if raw-responsible nil officer))
               code' (or (some-> (last (re-seq agency-code-re chunk)) second) code)
               rec (when (pos? i)
                     (let [fields (assoc (pua/fields (str pua/sep "1" pua/sep chunk)) 1
                                         (clean (first (str/split chunk (re-pattern pua/sep)))))]
                       (row->record fields {:published-at published-at
                                            :agency agency'
-                                           :agency-code code'})))]
-          (recur (inc i) agency' code' (if rec (conj acc rec) acc)))))))
+                                           :agency-code code'
+                                           :contract-officer officer'})))]
+          (recur (inc i) agency' code' officer' (if rec (conj acc rec) acc)))))))
 
 (defn corpus-manifest
   [{:keys [observed-at issues record-count window-days]}]
