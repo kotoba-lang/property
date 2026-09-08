@@ -45,7 +45,7 @@
 
    出典：国税庁法人番号公表サイト（国税庁）
    https://www.houjin-bangou.nta.go.jp/download/zenken/ を加工して作成"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def source-id
   "Collector-level source id. Distinct from the Web-API client's source
@@ -271,7 +271,7 @@
     (-> #?(:clj (java.text.Normalizer/normalize s java.text.Normalizer$Form/NFKC)
            :cljs (.normalize s "NFKC"))
         (str/replace #"[\s　]" "")
-        (str/lower-case))))
+        (str/lower))))
 
 (defn name-core
   "`normalize-name` with the corporate form removed, wherever it sits (Japanese

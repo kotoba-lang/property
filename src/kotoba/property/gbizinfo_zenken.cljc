@@ -40,7 +40,7 @@
    が既に `jp-go-gbiz-info` に commit しているものと**同一**にしてある —— 同じ
    authority の同じ事実を 2 つの語彙で持つと、片方だけが直る mirror になる
    （CLAUDE.md）。会社そのものの属性（決算期・売上）だけが `:company/*`。"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def source-id "gbizinfo-zenken")
 (def authority-id "JP/METI-gBizINFO")

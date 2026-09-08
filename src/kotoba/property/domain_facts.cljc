@@ -28,7 +28,7 @@
    RDAP 側も同じで、`entities` から取るのは role が `registrar` のものだけ
    （gTLD の registrant は基本 redact されているが、redact されていない日に
    拾わないことがここの目的）。"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dataset "domain-facts")
 
@@ -42,7 +42,7 @@
                 (str/replace #"^https?://" "")
                 (str/replace #"[/?#].*$" "")
                 (str/replace #":\d+$" "")
-                str/lower-case
+                str/lower
                 str/trim)]
       (when (re-find #"^[a-z0-9.-]+\.[a-z]{2,}$" h)
         (str/replace h #"^www\." "")))))
@@ -83,7 +83,7 @@
   "その名前が**組織**を指していると言えるか。法人格の語が入っていれば言える。"
   [s]
   (boolean (and (not (str/blank? (str s)))
-                (re-find organization-markers (str/lower-case (str s))))))
+                (re-find organization-markers (str/lower (str s))))))
 
 ;; ---------- JPRS WHOIS ----------
 
@@ -171,7 +171,7 @@
          (cond-> (-> acc
                     (dissoc :registry/signing-key)
                     (assoc :registry/source "jprs-whois"))
-          (:registry/domain acc) (assoc :registry/domain (str/lower-case (:registry/domain acc)))
+          (:registry/domain acc) (assoc :registry/domain (str/lower (:registry/domain acc)))
           (:registry/created-on acc) (assoc :registry/created-on (normalize-date (:registry/created-on acc)))
           (:registry/connected-on acc) (assoc :registry/connected-on (normalize-date (:registry/connected-on acc)))
           (:registry/expires-on acc) (assoc :registry/expires-on (normalize-date (:registry/expires-on acc)))
@@ -180,7 +180,7 @@
           true (assoc :registry/dnssec-signed?
                       (boolean (some-> (:registry/signing-key acc) str/trim seq)))
           (:registry/nameservers acc)
-          (assoc :registry/nameservers (vec (distinct (map str/lower-case (:registry/nameservers acc)))))))))))
+          (assoc :registry/nameservers (vec (distinct (map str/lower (:registry/nameservers acc)))))))))))
 
 ;; ---------- RDAP（gTLD） ----------
 
@@ -206,9 +206,9 @@
   [m]
   (when (map? m)
     (let [events (get m "events")
-          ns- (->> (get m "nameservers") (keep #(get % "ldhName")) (map str/lower-case) distinct vec)]
+          ns- (->> (get m "nameservers") (keep #(get % "ldhName")) (map str/lower) distinct vec)]
       (cond-> {:registry/source "rdap"}
-        (get m "ldhName") (assoc :registry/domain (str/lower-case (get m "ldhName")))
+        (get m "ldhName") (assoc :registry/domain (str/lower (get m "ldhName")))
         (seq (get m "status")) (assoc :registry/status (vec (get m "status")))
         (seq ns-) (assoc :registry/nameservers ns-)
         (rdap-event events "registration") (assoc :registry/created-on (rdap-event events "registration"))
@@ -236,18 +236,18 @@
 
 (defn mail-provider [mx-hosts]
   (some (fn [[re label]]
-          (when (some #(re-find re (str/lower-case (str %))) mx-hosts) label))
+          (when (some #(re-find re (str/lower (str %))) mx-hosts) label))
         mail-providers))
 
 (defn dns-facts
   "引いた結果 → `:dns/*`。**引けなかったことと、無いことを分ける** ——
    `:dns/queried?` が false なら、以下の不在は事実ではなく未測定である。"
   [{:keys [ns mx txt queried? observed-at]}]
-  (let [mx-hosts (vec (sort (distinct (map str/lower-case (or mx [])))))
-        txt* (map str/lower-case (or txt []))]
+  (let [mx-hosts (vec (sort (distinct (map str/lower (or mx [])))))
+        txt* (map str/lower (or txt []))]
     (cond-> {:dns/queried? (boolean queried?)
              :dns/observed-at observed-at}
-      (seq ns) (assoc :dns/nameservers (vec (sort (distinct (map str/lower-case ns)))))
+      (seq ns) (assoc :dns/nameservers (vec (sort (distinct (map str/lower ns)))))
       (seq mx-hosts) (assoc :dns/mx mx-hosts)
       (mail-provider mx-hosts) (assoc :dns/mail-provider (mail-provider mx-hosts))
       queried? (assoc :dns/spf? (boolean (some #(str/starts-with? % "v=spf1") txt*))))))
@@ -283,7 +283,7 @@
   (when (and (not (str/blank? (str registrant))) (not (str/blank? (str legal-name))))
     (let [nfkc (fn [x] #?(:clj (java.text.Normalizer/normalize x java.text.Normalizer$Form/NFKC)
                           :cljs (.normalize (str x) "NFKC")))
-          norm #(-> (str %) nfkc (str/replace #"[\s　・･]" "") str/lower-case)]
+          norm #(-> (str %) nfkc (str/replace #"[\s　・･]" "") str/lower)]
       (= (norm registrant) (norm legal-name)))))
 
 (defn corpus-manifest

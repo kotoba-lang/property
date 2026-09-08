@@ -28,7 +28,7 @@
      IS_SUBFUND_OF                  72,849
      IS_INTERNATIONAL_BRANCH_OF      1,940
      IS_FEEDER_TO                    1,387"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.gleif-golden-copy :as l1]))
 
 (def source-id
@@ -100,7 +100,7 @@
    from the API."
   [s]
   (when-not (str/blank? s)
-    (-> s str/lower-case (str/replace "_" "-") keyword)))
+    (-> s str/lower (str/replace "_" "-") keyword)))
 
 (defn relation-id
   "The Golden Copy carries no relationship id, but (child, type, parent) is
@@ -124,7 +124,7 @@
       (cond-> (assoc rec :corporate-relation/id (relation-id child type parent))
         type (assoc :corporate-relation/type type)
         (:corporate-relation/status rec)
-        (update :corporate-relation/status #(-> % str/lower-case keyword))))))
+        (update :corporate-relation/status #(-> % str/lower keyword))))))
 
 (defn publish-id
   "`20260803-0000-gleif-goldencopy-rr-golden-copy.csv` -> the publish stamp."
@@ -154,7 +154,7 @@
    Matching only the child would silently drop every subsidiary of a company
    the plane already holds."
   [{:keys [leis types validation active-only?]}]
-  (let [lei-set (when (seq leis) (set (map str/upper-case leis)))
+  (let [lei-set (when (seq leis) (set (map str/upper leis)))
         type-set (when (seq types) (set (map keyword types)))
         validation-set (when (seq validation) (set validation))]
     (fn [rec]

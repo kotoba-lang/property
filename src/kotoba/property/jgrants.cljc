@@ -23,7 +23,7 @@
    that did not say how it was gathered would read as complete.
 
    出典：jGrants（デジタル庁）https://api.jgrants-portal.go.jp/ を加工して作成"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def source-id "jgrants-public-subsidies")
 (def authority-id "JP/Digital-Agency-jGrants")

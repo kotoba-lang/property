@@ -37,7 +37,7 @@
    認定は『いつ・どの計画が認定されたか』の公表事実であって、その企業がいま特定の
    税制を使えるという主張ではない。重みは「設備を買う意思にどれだけ近いか」を
    我々が置いた仮定で、**税制の強さの順位ではない。**"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dataset "lead-intent-score")
 

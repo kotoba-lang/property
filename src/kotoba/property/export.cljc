@@ -3,7 +3,7 @@
 
   Renders parcels, listings and leases to CSV and JSON for tenancy audit and
   downstream reporting. Pure data → text: no network."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property :as prop]))
 
 (defn- csv-cell [v]

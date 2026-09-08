@@ -23,7 +23,7 @@
 
    **確かめていない PUA は写像に入れない。** 項番（丸数字）は値ではなく区切りとして
    使うので、区切り文字に置き換える。"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def digit-base
   "U+E88A..U+E893 = 0..9。上記の 3 通りの突き合わせで確定。"

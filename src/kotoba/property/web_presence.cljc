@@ -17,7 +17,7 @@
 
    出典：gBizINFO（経済産業省）https://info.gbiz.go.jp/ を加工して作成 +
    各社の自己公表フィード（`:press/feed-url` に URL、`:source/observed-at` に取得時刻）"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dataset "web-presence")
 (def authority-id "JP/METI-gBizINFO+self-published")

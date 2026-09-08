@@ -29,7 +29,7 @@
    An ambiguous name resolves to NOTHING and is reported by name. Picking the
    first candidate would produce a projection that looks complete and is
    quietly wrong about which company it is."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.houjin-bangou-zenken :as hb]))
 
 (defn- prefecture-match?
@@ -39,7 +39,7 @@
   (boolean
    (when region
      (some (fn [w]
-             (let [w (str/upper-case (str/trim w))]
+             (let [w (str/upper (str/trim w))]
                (or (= region w) (= region (str "JP-" w)))))
            wanted))))
 

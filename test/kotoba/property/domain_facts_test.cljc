@@ -1,5 +1,5 @@
 (ns kotoba.property.domain-facts-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.lang.text] [clojure.test :refer [deftest is testing]]
             [kotoba.property.domain-facts :as df]))
 
 (def jprs-cojp
@@ -41,7 +41,7 @@ Contact Information: [公開連絡窓口]
   (let [m (df/parse-jprs-whois jprs-cojp)
         blob (pr-str m)]
     (doseq [leak ["TE347JP" "KK1960JP" "山田" "太郎" "taro@example.co.jp" "03-0000-0000"]]
-      (is (not (clojure.string/includes? blob leak)) (str "leaked: " leak)))))
+      (is (not (kotoba.lang.text/includes? blob leak)) (str "leaked: " leak)))))
 
 (deftest rdap-takes-the-registrar-and-not-the-registrant
   (let [m (df/parse-rdap
@@ -62,7 +62,7 @@ Contact Information: [公開連絡窓口]
     (is (= ["ns00.vips.ne.jp"] (:registry/nameservers m)))
     (is (= "MarkMonitor Inc." (:registry/registrar m)))
     (is (false? (:registry/dnssec-signed? m)))
-    (is (not (clojure.string/includes? (pr-str m) "Jane Doe")) "registrant は見ない")))
+    (is (not (kotoba.lang.text/includes? (pr-str m) "Jane Doe")) "registrant は見ない")))
 
 (deftest registrable-domain-does-not-over-shorten
   (is (= "example.co.jp" (df/registrable-domain "ir.example.co.jp")))

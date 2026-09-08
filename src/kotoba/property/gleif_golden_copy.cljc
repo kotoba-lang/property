@@ -16,7 +16,7 @@
    every later line is one company. Repeating those five values on 3.4M
    records cost ~680 MB of the corpus and a measurable share of the ingest's
    `pr-str` time, for information that cannot vary within a file."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def source-id
   "Collector-level source id, distinct from `gleif-level-2` (the paginated API

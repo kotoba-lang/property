@@ -22,7 +22,7 @@
    read — the same rule the NTA archives dataset exists for.
 
    出典：gBizINFO（経済産業省）https://info.gbiz.go.jp/ を加工して作成"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def source-id "gbizinfo-rest-v2")
 (def authority-id "JP/METI-gBizINFO")

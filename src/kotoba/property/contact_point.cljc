@@ -32,7 +32,7 @@
 
    出典：gBizINFO（経済産業省）https://info.gbiz.go.jp/ を加工して作成 +
    各社の自己公表ページ（`:source/observed-at` に取得時刻、`:contact/source-url` に URL）"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dataset "lead-contact-point")
 (def authority-id "JP/METI-gBizINFO+self-published")
@@ -121,7 +121,7 @@
       ;; 「ストックマーク」が「ストックマク」になる（実測 2026-08-25）。両側が同じに
       ;; 壊れるので突き合わせ自体は通るが、別語が衝突する余地を作る。
       (str/replace #"[\s　・,、.。\-‐−–－_/\\()（）\[\]「」]" "")
-      str/lower-case))
+      str/lower))
 
 (def closed-name-re #"(閉鎖|清算結了|解散)")
 
@@ -165,16 +165,16 @@
      (reduce
       (fn [{:keys [groups pending] :as acc} line]
         (let [[k v] (str/split line #":" 2)
-              k (str/lower-case (str/trim (str k)))
+              k (str/lower (str/trim (str k)))
               v (str/trim (str v))]
           (cond
             (= k "user-agent")
             (if (:open? acc)
               ;; 直前が rule 行なら新しいグループが始まる
-              (assoc acc :groups (conj groups {:agents #{(str/lower-case v)} :disallow [] :allow []})
+              (assoc acc :groups (conj groups {:agents #{(str/lower v)} :disallow [] :allow []})
                          :open? false :pending nil)
               (let [gs (if (seq groups) groups [{:agents #{} :disallow [] :allow []}])
-                    gs (update gs (dec (count gs)) update :agents conj (str/lower-case v))]
+                    gs (update gs (dec (count gs)) update :agents conj (str/lower v))]
                 (assoc acc :groups gs :pending pending)))
 
             (contains? #{"disallow" "allow"} k)
@@ -199,7 +199,7 @@
    RFC 9309 がそう定めている（4xx は full allow）。**取れなかったことを呼び手が
    知りたいなら、それは呼び手が status で持つ** —— ここで両者を混ぜない。"
   [robots-txt ua path]
-  (let [ua (str/lower-case (str ua))
+  (let [ua (str/lower (str ua))
         groups (robots-groups robots-txt)
         pick (fn [pred] (seq (filter pred groups)))
         matching (or (pick (fn [g] (some #(and (not= % "*") (str/includes? ua %)) (:agents g))))
@@ -339,7 +339,7 @@
    `:personal` に倒す —— 誤って個人アドレスを窓口として出力するより、
    誤って窓口を落とす方が安い。"
   [email]
-  (let [local (str/lower-case (str/trim (first (str/split (str email) #"@"))))]
+  (let [local (str/lower (str/trim (first (str/split (str email) #"@"))))]
     (cond
       (contains? role-locals local) :role
       (re-find #"^(info|contact|inquiry|sales|support|office|hello|press|recruit)[._\-]" local) :role
@@ -357,7 +357,7 @@
         texts (->> (re-seq text-email-re (strip-tags h)) (map second))
         clean (fn [xs] (->> xs
                             (map str/trim)
-                            (map str/lower-case)
+                            (map str/lower)
                             (remove #(re-find junk-email-re %))
                             distinct))
         mailtos (clean mailtos)

@@ -25,7 +25,7 @@
    3. **Unreadable is not measured.** `:tally/unreadable` counts lines that
       could not be parsed. A caller that reports a tally without reading it is
       reporting a number it did not measure."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def ^:const absent
   "Bucket key for a record that carries no value for the attribute being
