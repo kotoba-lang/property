@@ -33,9 +33,13 @@
     (is (= ["株式会社宮下農園" "合同会社大地"] (mapv :company/legal-name rs)))
     (is (= ["北海道旭川市永山町十一丁目一九〇番地" "岩手県八幡平市平舘一五地割一二四番地"]
            (mapv :company/address rs)))
-    ;; 清算人の氏名は公表物だが持ち歩かない。
-    (doseq [leak ["宮下 宏明" "宮下宏明" "畠山" "秀春" "清算人"]]
-      (is (not (str/includes? (pr-str rs) leak)) (str "leaked: " leak)))))
+    ;; 清算人は :kaisan/liquidator に入る（オーナー判断 2026-09-08）。
+    ;; **商号と住所の欄には入らない** —— そこに人が座るのは、正しく見える誤った値。
+    (doseq [r rs]
+      (doseq [k [:company/legal-name :company/address]]
+        (is (not (re-find #"清算人" (str (get r k)))) (str k " に清算人が入った"))))
+    (is (= [["代表清算人 宮下 宏明"] ["清算人 畠山 秀春"]]
+           (mapv :kaisan/liquidator rs)))))
 
 (deftest resolution-route-is-not-flattened
   (let [rs (vec (kai/parse-section two-notices "2026-08-18"))]
@@ -57,7 +61,7 @@
     (is (= "一般社団法人ＮＯＬＩＭＩＴ旭川" (:company/legal-name r)))
     (is (nil? (:kaisan/resolved-on r)) "掲載日を決議日として入れない")
     (is (= :unknown (:kaisan/kind r)))
-    (is (not (str/includes? (pr-str r) "小林")))))
+    (is (= ["代表清算人 小林 祐季"] (:kaisan/liquidator r)))))
 
 (deftest the-name-may-follow-the-liquidator-line
   ;; 縦書きの段組みでは商号が「代表清算人 …」の後ろに来ることがある。
@@ -69,7 +73,7 @@
 株式会社テスト商会"
         r (kai/block->record block "2026-08-18")]
     (is (= "株式会社テスト商会" (:company/legal-name r)))
-    (is (not (str/includes? (pr-str r) "山田")))))
+    (is (= ["代表清算人 山田 太郎"] (:kaisan/liquidator r)))))
 
 (deftest a-block-with-no-corporate-form-is-dropped
   ;; 個人の公告や、商号が段の境界で切れたものは**推測しない**。
@@ -99,7 +103,7 @@
            "2026-07-22")]
     (is (= "有限会社幸陽精光" (:company/legal-name r)))
     (is (= "2026-06-30" (:kaisan/resolved-on r)) "掲載日ではなく決議日")
-    (is (not (str/includes? (pr-str r) "田代")))))
+    (is (= ["清算人 田代 幸子"] (:kaisan/liquidator r)))))
 
 (deftest a-date-split-across-the-column-interleave-is-dropped
   ;; pdftotext は縦書きの列を交互に出すので、日付が別の列の行に割られることがある
@@ -138,3 +142,33 @@
 東京都港区芝浦三丁目九番一号
 株式会社未来解散"
                                 "2026-08-18")))))
+
+(deftest a-liquidator-split-by-the-column-wrap-is-reassembled
+  ;; 実測 2026-09-08、号外第200号: 役職者行 181 本のうち 38 本が姓と名の間で
+  ;; 割れていた（`大堀`/`力`、`劉`/`永強`、`矢澤`/`学` …）。最初の行だけを
+  ;; 保存すれば、名が黙って欠けた姓になる。
+  (let [r (kai/block->record
+           "解散公告
+当社は︑令和八年七月三十一日開催の株主総会の決議により解散いたしましたので︑
+令和八年九月八日
+福島県会津若松市飯寺北一丁目六番五二号
+株式会社世新興業
+代表清算人 大堀
+力"
+           "2026-09-08")]
+    (is (= "株式会社世新興業" (:company/legal-name r)))
+    (is (= ["代表清算人 大堀 力"] (:kaisan/liquidator r)))))
+
+(deftest a-fragment-that-is-not-a-name-is-not-joined
+  ;; 連結の床。次の行が次の公告の見出しなら、名として吸い込まない。
+  (let [r (kai/block->record
+           "解散公告
+当社は︑令和八年七月三十一日開催の株主総会の決議により解散いたしましたので︑
+令和八年九月八日
+福島県会津若松市飯寺北一丁目六番五二号
+株式会社世新興業
+代表清算人 大堀
+解散公告"
+           "2026-09-08")]
+    (is (= "株式会社世新興業" (:company/legal-name r)))
+    (is (nil? (:kaisan/liquidator r)) "欠けた姓を書き出すより欄が無い方がよい")))

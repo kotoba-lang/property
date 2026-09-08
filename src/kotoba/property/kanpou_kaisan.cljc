@@ -14,11 +14,18 @@
    失われる**ので、これは「後でまとめて取る」ができないデータである
    （`kanpou-kessan` / `kanpou-chotatsu` と同じ性質）。
 
-   ## 清算人の氏名は取らない
+   ## 清算人は `:kaisan/liquidator` に取る
 
-   各公告は末尾に「代表清算人 小林 祐季」の形で**個人名**を載せる。公表物だが
-   持ち歩かない —— gbizinfo/basic-record・官報の発注機関・PR TIMES の会社概要と
-   同じ線。`block->record` は商号と所在地しか返さず、`清算人` 行に到達したら止まる。
+   各公告は末尾に「代表清算人 小林 祐季」の形で清算人を載せる。オーナー判断
+   2026-09-08（`DATA-GOVERNANCE.md`）により、**法人の公告に印刷された役職と氏名は
+   公開された法人情報として収集する。**
+
+   商号の判定は従来どおり清算人行を**除いた**本文に対して行う（人名は法人格の語を
+   持たないので `company-name-re` に当たらないが、住所や商号の断片と混ざる位置に
+   在るため）。読むのと、名前の欄に入れるのは別の話である。
+
+   1 ブロックに 2 名載る公告が在る（実測 2026-09-08、100 ブロック中 7 件）ので
+   ベクタで持つ。折り返しで割れた行の連結は `kanpou-officer` が持つ。
 
    ## 縦書き PUA
 
@@ -26,7 +33,8 @@
    `kanpou-pua/normalize`、和暦は `kanpou-kessan/wareki->date` を使う
    （**この 2 つを再実装しない**）。"
   (:require [clojure.string :as str]
-            [kotoba.property.kanpou-kessan :as kk]))
+            [kotoba.property.kanpou-kessan :as kk]
+            [kotoba.property.kanpou-officer :as officer]))
 
 (def dataset "kanpou-kaisan")
 (def authority-id "JP/NPB-Kanpou")
@@ -128,6 +136,9 @@
         ;; 落ちた）。個人名を避ける根拠は位置ではなく **法人格の語を要求すること**
         ;; —— 人名は `company-name-re` に当たらない。清算人行そのものだけ外す。
         body (remove #(re-find liquidator-line-re %) lines)
+        ;; 読む位置は `lines`（清算人行を外す前）。`body` から読むと、外した行を
+        ;; 探すことになる。
+        liquidators (officer/officer-lines lines liquidator-line-re)
         joined (str/join "" body)
         ;; ⚠ **ブロックの最初の日付を決議日にしない。** 決議日を本文に持たない公告
         ;; （「…法律第二〇六条第二号の規定により解散」）では、最初に見つかる和暦は
@@ -150,7 +161,14 @@
                :kaisan/published-at published-at
                :kaisan/kind (or (resolution-kind joined) :unknown)}
         addr-line (assoc :company/address (tidy addr-line))
-        resolved (assoc :kaisan/resolved-on resolved)))))
+        resolved (assoc :kaisan/resolved-on resolved)
+        ;; ⚠ `tidy` を当てない。**空白を畳むと姓と名の境界が消える** ——
+        ;; 商号や住所では折り返しの空白は雑音だが、氏名ではそれが構造である
+        ;; （`宮下 宏明` と `宮下宏明` は、後から姓を取り出せるかが違う）。
+        ;; 句読点だけを落とす。
+        (seq liquidators) (assoc :kaisan/liquidator
+                                 (mapv #(str/trim (str/replace % #"[︑︒、。]" ""))
+                                       liquidators))))))
 
 (defn parse-section [text published-at]
   (keep #(block->record % published-at) (split-blocks text)))
