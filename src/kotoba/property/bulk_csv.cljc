@@ -20,7 +20,7 @@
    区切りを定数にしたままセミコロンのファイルを流すと、**1 行が 1 フィールドとして
    通る** —— 例外にならず、ヘッダ検査も『列が 1 個ある』として通ってしまうので、
    誤りが最後まで静かに運ばれる。既定はカンマのまま、明示で渡せるようにする。"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (defn unclosed-quote?
   "その断片で引用符が閉じていないか（`\"\"` のエスケープも 1 個ずつ数えるので、
@@ -105,7 +105,7 @@
 (defn split-tsv-row
   "TSV の 1 行 -> フィールド。**末尾の空フィールドを落とさない。**
 
-   ⚠ `clojure.string/split` は runtime で答えが変わる。ClojureScript は
+   ⚠ `str/split` は runtime で答えが変わる。ClojureScript は
    limit `-1` を渡しても**末尾の空文字列を捨てる**が、JVM は残す。実測 2026-08-25、
    最後の列が空（= その行では全 boost シグナルが測れた）の行が nbb では 14 列、
    JVM では 15 列になり、**列数で行の妥当性を見ている読み手が、正しい行を

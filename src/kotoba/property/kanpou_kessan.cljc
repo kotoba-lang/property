@@ -28,7 +28,7 @@
    公告には代表取締役の氏名が載る。`gbizinfo/basic-record` と同じ理由で捨てる。
 
    出典：官報（国立印刷局）https://kanpou.npb.go.jp/ を加工して作成"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.kanpou-officer :as officer]))
 
 (def source-id "kanpou-kessan-koukoku")

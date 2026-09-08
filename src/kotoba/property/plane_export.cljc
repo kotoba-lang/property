@@ -14,7 +14,7 @@
    Only projections that pass the publication review in DATA-GOVERNANCE.md may
    be written to `data/` — today that is public-body property claims and
    corporate identity records, neither of which contains natural-person data."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def ownership-dataset "property-ownership")
 

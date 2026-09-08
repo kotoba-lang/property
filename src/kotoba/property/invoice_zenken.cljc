@@ -26,7 +26,7 @@
 
    出典：国税庁適格請求書発行事業者公表サイト（国税庁）
    https://www.invoice-kohyo.nta.go.jp/download/zenken を加工して作成"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def source-id "nta-invoice-zenken")
 

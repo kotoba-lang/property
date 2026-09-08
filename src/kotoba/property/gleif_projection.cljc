@@ -13,7 +13,7 @@
    or property ownership in Datalog. It is answerable only by a scan of the
    corpus (`scripts/query_gleif_corpus.cljs`), which cannot join. Widening the
    join surface means widening the projection, not sharding it further."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (defn matcher
   "Predicate over corpus records built from a selection spec.

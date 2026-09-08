@@ -6,7 +6,7 @@
   (:require [clojure.data.json :as json]
             [kotoba.lang.edn :as edn]
             [clojure.java.io :as io]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.ownership :as ownership])
   (:import [java.net URI]
            [java.net.http HttpClient HttpRequest HttpResponse$BodyHandlers]

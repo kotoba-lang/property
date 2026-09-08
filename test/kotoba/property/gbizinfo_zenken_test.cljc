@@ -1,5 +1,5 @@
 (ns kotoba.property.gbizinfo-zenken-test
-  (:require #?(:clj [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.lang.text] #?(:clj [clojure.test :refer [deftest is testing]]
                :cljs [cljs.test :refer-macros [deftest is testing]])
             [kotoba.property.gbizinfo-zenken :as gz]))
 
@@ -110,7 +110,7 @@
     (is (nil? (:source/content-sha256 m)))
     (is (= 2 (count (:source/publish m))))
     (doseq [k [:source/authority :source/licence :source/attribution :source/observed-at]]
-      (is (not (clojure.string/blank? (str (get m k)))) (str "manifest has no " k)))))
+      (is (not (kotoba.lang.text/blank? (str (get m k)))) (str "manifest has no " k)))))
 
 (deftest record-count-is-what-this-file-holds
   ;; ⚠ 以前は「読んだ元ファイルの行数」を入れており、同じ key が dataset によって

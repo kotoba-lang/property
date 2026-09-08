@@ -1,6 +1,6 @@
 (ns kotoba.property.gyousei-review-test
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.gyousei-review :as gr]))
 
 (deftest recipient-columns-are-read-by-name-not-letter

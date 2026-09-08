@@ -1,6 +1,6 @@
 (ns kotoba.property.kanpou-kaisan-test
   (:require [clojure.test :refer [deftest is testing]]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.kanpou-kaisan :as kai]))
 
 (def two-notices

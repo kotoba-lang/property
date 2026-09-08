@@ -39,7 +39,7 @@
 
    続きの行は 1〜4 字の漢字・かなだけで、法人格の語も数字も含まないこと。
    次の公告の見出し（`解散公告`）や住所行を名として吸い込まないための床である。"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def ^:private name-continuation-re
   ;; 続きの行として認める形。漢字・ひらがな・カタカナ・長音・中黒だけの 1〜4 字。

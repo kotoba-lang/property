@@ -29,7 +29,7 @@
    区別したいときは `:source/dataset` を見る。
 
    出典：官報（国立印刷局）https://kanpou.npb.go.jp/ を加工して作成"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.kanpou-pua :as pua]))
 
 (def source-id "kanpou-chotatsu-rakusatsu")

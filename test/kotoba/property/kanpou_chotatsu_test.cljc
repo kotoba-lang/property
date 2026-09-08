@@ -1,5 +1,5 @@
 (ns kotoba.property.kanpou-chotatsu-test
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [clojure.test :refer [deftest is testing]]
             [kotoba.property.kanpou-pua :as pua]
             [kotoba.property.kanpou-chotatsu :as kc]))

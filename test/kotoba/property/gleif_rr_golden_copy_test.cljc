@@ -1,5 +1,5 @@
 (ns kotoba.property.gleif-rr-golden-copy-test
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [clojure.test :refer [deftest is testing]]
             [kotoba.property.gleif-golden-copy :as l1]
             [kotoba.property.gleif-rr-golden-copy :as rr]))

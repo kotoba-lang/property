@@ -1,5 +1,5 @@
 (ns kotoba.property.houjin-bangou-zenken-test
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [clojure.test :refer [deftest is testing]]
             [kotoba.property.houjin-bangou-zenken :as hb]))
 

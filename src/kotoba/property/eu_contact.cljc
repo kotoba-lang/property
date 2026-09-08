@@ -56,7 +56,7 @@
 
    出典：CORDIS（欧州委員会）https://cordis.europa.eu/（CC BY 4.0）+
    各社の自己公表ページ（`:source/observed-at` に取得時刻）"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.contact-point :as cp]
             [kotoba.property.eu-cordis :as eu]))
 
@@ -140,7 +140,7 @@
    `sales.john` は 2 の形に見えるが `john` が `region-suffixes` に無いので
    `:personal` になる。**これが日本版との差そのもの。**"
   [email]
-  (let [local (-> (str email) (str/split #"@") first str str/trim str/lower-case)
+  (let [local (-> (str email) (str/split #"@") first str str/trim str/lower)
         parts (remove str/blank? (str/split local #"[._\-+]"))]
     (cond
       (contains? cp/role-locals local) :role

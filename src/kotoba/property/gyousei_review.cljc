@@ -24,7 +24,7 @@
    **円に正規化しない** —— `:grant/amount-million-jpy` として原文の単位のまま持つ。
    gBizINFO の `:grant/amount-yen` と足し合わせられないのはそのためで、
    混ぜたい者に気付かせる方が、静かに桁を間違えるより良い。"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dataset "gyousei-review")
 (def authority-id "JP/GYOUKAKU-Review")
@@ -97,7 +97,7 @@
   (boolean (and (not (str/blank? (str name)))
                 (not (re-matches person-name-re (str/trim (str name))))
                 (or (re-matches #"[0-9]{13}" (str houjin-bangou))
-                    (re-find organization-marker-re (str/lower-case (str name)))))))
+                    (re-find organization-marker-re (str/lower (str name)))))))
 
 (defn- clean [s]
   (let [v (-> (str s) (str/replace #"[\s　]+" " ") str/trim)]

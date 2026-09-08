@@ -39,7 +39,7 @@
    だから `:submittable` は『少なくとも HTML 上は正直に埋まる』であって、
    『送れば通る』ではない。この差は測っていない —— 測るには送る必要があり、
    それはこの層の仕事ではない。"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.contact-point :as cp]))
 
 (def dataset "lead-contact-form")
@@ -79,7 +79,7 @@
    テストが両方向を見ていたので landing 前に出た）。"
   [tag-inner]
   (reduce (fn [m [_ k v1 v2 v3]]
-            (assoc m (str/lower-case k) (or v1 v2 v3 "")))
+            (assoc m (str/lower k) (or v1 v2 v3 "")))
           {}
           (re-seq attr-re (str tag-inner))))
 
@@ -164,9 +164,9 @@
    **`:unfillable` は形より先に見る。** 『ご登録のメールアドレス』はメール欄の形を
    しているが、こちらには真実の値が無い。形で先に分類すると、その差が消える。"
   [{:keys [type name id label placeholder]}]
-  (let [t (str/lower-case (str type))
-        primary (str/lower-case (str/join " " (remove str/blank? [name label placeholder])))
-        fallback (str/lower-case (str id))
+  (let [t (str/lower (str type))
+        primary (str/lower (str/join " " (remove str/blank? [name label placeholder])))
+        fallback (str/lower (str id))
         by-rules (fn [hay] (some (fn [[k re]] (when (re-find re hay) k)) kind-rules))]
     (cond
       (= t "file") :file-upload
@@ -238,7 +238,7 @@
   [a label context]
   (boolean
    (or (contains? a "required")
-       (= "true" (str/lower-case (str (get a "aria-required"))))
+       (= "true" (str/lower (str (get a "aria-required"))))
        (re-find #"(?i)(require|必須|hissu|mandatory)" (str (get a "class")))
        (re-find #"(?i)(require|必須)" (str (get a "data-validate") (get a "data-rule") (get a "data-required")))
        (re-find required-word-re (str label))
@@ -255,8 +255,8 @@
   (->> (located (str body) field-re)
        (keep (fn [{[_ tag inner] :m :keys [start end]}]
                (let [a (attrs inner)
-                     tag (str/lower-case tag)
-                     t (if (= tag "input") (str/lower-case (str (get a "type" "text"))) tag)]
+                     tag (str/lower tag)
+                     t (if (= tag "input") (str/lower (str (get a "type" "text"))) tag)]
                  (when-not (contains? ignorable-types t)
                    (let [id (not-empty (str (get a "id")))
                          nm (not-empty (str (get a "name")))
@@ -295,7 +295,7 @@
    『2 項目の submittable なフォーム』として数えてしまう。"
   [{:keys [attrs] :as region} fields]
   (let [action (str (get attrs "action"))
-        names (str/lower-case (str/join " " (keep :field/name fields)))
+        names (str/lower (str/join " " (keep :field/name fields)))
         n (count fields)]
     {:action action
      :field-count n
@@ -455,9 +455,9 @@
   [html]
   (->> (re-seq field-re (str html))
        (remove (fn [[_ tag inner]]
-                 (let [tag (str/lower-case tag)
+                 (let [tag (str/lower tag)
                        t (if (= tag "input")
-                           (str/lower-case (str (get (attrs inner) "type" "text")))
+                           (str/lower (str (get (attrs inner) "type" "text")))
                            tag)]
                    (contains? ignorable-types t))))
        count))

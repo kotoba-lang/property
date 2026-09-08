@@ -26,7 +26,7 @@
 
    出典：CORDIS（欧州委員会）https://cordis.europa.eu/ の Horizon Europe
    projects データセットを加工して作成。CC BY 4.0。"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dataset "eu-cordis-intent")
 (def authority-id "EU/EC-CORDIS-HorizonEurope")
@@ -131,7 +131,7 @@
            :signature-date (blank->nil (:signature-date m))
            :start-date (blank->nil (:start-date m))
            ;; SME は 3 値。**`false` と『載っていない』を同じにしない。**
-           :sme (case (str/lower-case (str (:sme m))) "true" true "false" false nil)
+           :sme (case (str/lower (str (:sme m))) "true" true "false" false nil)
            :ec-contribution (let [v (blank->nil (:ec-contribution m))]
                               (when v
                                 (let [n #?(:clj (try (Double/parseDouble (str/replace v "," "."))

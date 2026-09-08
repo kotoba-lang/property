@@ -30,7 +30,7 @@
      feed が無い。HTML を掻きに行くのはここでは選ばない。
 
    出典：PR TIMES（株式会社 PR TIMES）https://prtimes.jp/ の公開 RSS を加工して作成"
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def dataset "press-wire")
 

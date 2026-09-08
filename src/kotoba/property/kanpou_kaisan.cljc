@@ -32,7 +32,7 @@
    本文は縦書きで、句読点は `︑︒`、数字は Adobe-Npb1 の PUA。復号は
    `kanpou-pua/normalize`、和暦は `kanpou-kessan/wareki->date` を使う
    （**この 2 つを再実装しない**）。"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.kanpou-kessan :as kk]
             [kotoba.property.kanpou-officer :as officer]))
 

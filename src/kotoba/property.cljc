@@ -8,7 +8,7 @@
 
   Amounts are plain numbers in the smallest unit of the account currency.
   Portable (.cljc) across JVM / ClojureScript / SCI / GraalVM."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 ;; ---------------------------------------------------------------------------
 ;; Parcel — land identifier (national format-agnostic)
