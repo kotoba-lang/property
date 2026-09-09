@@ -8,7 +8,7 @@
 
    usage: nbb -cp src scripts/revalidate_domain_facts.cljs --records <file> [--dry-run]"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.domain-facts :as df]
             ["fs" :as fs]))
 

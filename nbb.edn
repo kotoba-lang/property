@@ -1,5 +1,11 @@
 {:paths ["src"]
- :deps {io.github.kotoba-lang/datalog {:git/url "https://github.com/kotoba-lang/datalog.git"
+ :deps {
+        ;; kotoba.lang.text, not clojure.string. Declared HERE and not only in
+        ;; deps.edn because nbb does not read deps.edn -- the .cljs files in
+        ;; this repo are run by nbb, and a coordinate they cannot see is not a
+        ;; declaration.
+        io.github.kotoba-lang/text {:git/sha "2ee6dce2ca944decd001f9378868dd703fc3e741"}
+        io.github.kotoba-lang/datalog {:git/url "https://github.com/kotoba-lang/datalog.git"
                                        :git/sha "d18513af533917539c56435de6fb1426738da31a"}
         io.github.kotoba-lang/edn {:git/url "https://github.com/kotoba-lang/edn.git"
                                   :git/sha "250f4dafa5f5c7fb3109703496a52866e2a62dcd"}}}

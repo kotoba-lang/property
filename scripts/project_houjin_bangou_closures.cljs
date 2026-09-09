@@ -25,7 +25,7 @@
      nbb -cp src scripts/project_houjin_bangou_closures.cljs --corpus <c>
        --numbers <file of 13-digit numbers> --out <repo>/data/closures.datoms.edn"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.houjin-bangou-zenken :as hb]
             ["fs" :as fs]
             ["path" :as path]

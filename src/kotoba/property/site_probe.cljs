@@ -20,7 +20,7 @@
    するのは、この経路が同じだけ走ってからにする（今 refactor すると、動く方を
    動かないかもしれない方に合わせることになる）。**重複していることを承知で
    置いている。**"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.contact-point :as cp]))
 
 (defn now [] (.toISOString (js/Date.)))

@@ -32,7 +32,7 @@
      nbb scripts/collect_gleif_golden_copy.cljs --zip <path> --out <corpus.edn> --limit 1000
      nbb scripts/collect_gleif_golden_copy.cljs --zip <path> --out <shard-1.edn> \\
        --skip 850000 --limit 850000 --no-manifest"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gleif-golden-copy :as gc]
             ["child_process" :as cp]

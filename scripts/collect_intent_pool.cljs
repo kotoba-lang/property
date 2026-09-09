@@ -22,7 +22,7 @@
        [--refresh]   キャッシュを無視して落とし直す
 
    Requires GBIZINFO_TOKEN（env か Keychain `gbizinfo-api-token`）。無ければ exit 3。"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.bulk-csv :as csv]
             [kotoba.property.intent-score :as sc]
             [kotoba.property.gbizinfo :as gb]

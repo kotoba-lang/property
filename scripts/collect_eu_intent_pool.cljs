@@ -33,7 +33,7 @@
    `--max-old-space-size` を上げること。⚠ `npx --yes nbb` はこのマシンで壊れている。
 
    出典：CORDIS（欧州委員会）https://cordis.europa.eu/（CC BY 4.0）を加工して作成。"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.bulk-csv :as csv]
             [kotoba.property.eu-cordis :as eu]
             [kotoba.property.eu-intent-score :as sc]

@@ -25,7 +25,7 @@
        [--limit N] [--concurrency 6] [--delay-ms 400] [--eu] [--merge-into <edn>]
 
    exit: 0 成功 / 2 答えられなかった（1 件も分類できなかった）/ 3 引数不足。"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.lang.edn :as edn]
             [kotoba.property.contact-point :as cp]
             [kotoba.property.contact-form :as cf]
@@ -87,7 +87,7 @@
 ;; 1 URL
 
 (defn- path-of [url org]
-  (let [p (str/replace (str url) (re-pattern (str "^" (str/replace (str org) #"([.?*+^$\[\]\\(){}|\-])" "\\$1"))) "")]
+  (let [p (str/replace (str url) (re-pattern (str "^" (str/re-quote (str org)))) "")]
     (if (str/blank? p) "/" p)))
 
 (defn- audit-one [url solicitation-re]
@@ -212,7 +212,7 @@
                  (println (str "SCANNED\t" (count records)))
                  (doseq [k [:submittable :field-unfillable :captcha :external
                             :js-only :fetch-failed :robots-disallowed]]
-                   (println (str (str/upper-case (name k)) "\t"
+                   (println (str (str/upper (name k)) "\t"
                                  (get (:coverage/by-class cov) k 0))))
                  (println (str "SOLICITATION-FORBIDDEN\t" (:coverage/solicitation-forbidden cov)))
                  (println (str "SENDABLE\t" (:coverage/sendable cov)))

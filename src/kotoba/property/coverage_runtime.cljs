@@ -1,6 +1,6 @@
 (ns kotoba.property.coverage-runtime
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             ["fs" :as fs]))
 
 (defn- catalog []

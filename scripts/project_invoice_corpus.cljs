@@ -16,7 +16,7 @@
        --number-file /tmp/plane-jp-numbers.txt --latest-only \\
        --out <repo>/data/invoice-joined.datoms.edn"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.invoice-zenken :as inv]
             ["fs" :as fs]
             ["path" :as path]

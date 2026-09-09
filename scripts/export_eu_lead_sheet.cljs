@@ -25,7 +25,7 @@
 
    usage:
      nbb -cp src scripts/export_eu_lead_sheet.cljs --in <edn> --out <tsv> [--include-excluded]"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.lang.edn :as edn]
             [kotoba.property.eu-contact :as eu]
             ["fs" :as fs]))

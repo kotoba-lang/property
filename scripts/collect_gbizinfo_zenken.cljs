@@ -28,7 +28,7 @@
        --out <repo>/data/gbizinfo-joined.datoms.edn
        [--sections subsidy,procurement,certification,finance,commendation]
        [--cache <dir>] [--keep-zip]"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.gbizinfo-zenken :as gz]
             ["child_process" :as cp]
             ["crypto" :as crypto]

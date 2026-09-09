@@ -35,7 +35,7 @@
    ⚠ `npx --yes nbb` はこのマシンで壊れている。`nbb` を直接呼ぶ。
 
    出典：CORDIS（欧州委員会）https://cordis.europa.eu/（CC BY 4.0）+ 各社の自己公表ページ。"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.lang.edn :as edn]
             [kotoba.property.contact-point :as cp]
             [kotoba.property.site-probe :as probe]

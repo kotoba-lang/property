@@ -2,3 +2,6 @@
 /.cpcache/
 /.nbb/
 /node_modules/
+
+# nbb dependency cache (nbb.edn :deps)
+.nbb/

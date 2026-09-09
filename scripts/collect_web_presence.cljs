@@ -15,7 +15,7 @@
 
    usage:
      nbb -cp src scripts/collect_web_presence.cljs --numbers <file> --out <f> [--newsfeed-out <f>] [--limit N]"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.gbizinfo :as gb]
             [kotoba.property.web-presence :as wp]
             ["child_process" :as cp]

@@ -28,7 +28,7 @@
      nbb -cp src scripts/collect_domain_facts.cljs --web-presence <file> --out <file>
        [--attempts <ledger.edn>] [--retry-days 30] [--limit N] [--delay-ms 1500]"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.domain-facts :as df]
             ["dns/promises" :as dnsp]
             ["fs" :as fs]
@@ -110,7 +110,7 @@
                 :mx (map #(get % "exchange") mx)
                 :txt (map #(str/join "" %) txt)
                 :dmarc? (when dmarc
-                          (boolean (some #(str/starts-with? (str/lower-case (str/join "" %)) "v=dmarc1") dmarc)))
+                          (boolean (some #(str/starts-with? (str/lower (str/join "" %)) "v=dmarc1") dmarc)))
                 ;; NS も MX も TXT も全部 nil なら、引けていない（NXDOMAIN か遮断）。
                 :queried? (boolean (or (seq ns) (seq mx) (seq txt)))}))))
 

@@ -11,7 +11,7 @@
 
    Usage:
      nbb -cp src scripts/collect_kanpou_chotatsu.cljs --back 14 --out <repo>/data/kanpou-chotatsu.datoms.edn"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.kanpou-chotatsu :as kc]
             ["child_process" :as cp]

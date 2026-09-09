@@ -23,7 +23,7 @@
    everything and found nothing unusual."
   (:require [cljs.pprint :as pp]
             [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.gleif-universe :as gu]
             ["fs" :as fs]
             ["path" :as path]

@@ -12,7 +12,7 @@
 
    Streams the corpus line by line: it is larger than this process's heap."
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.gleif-projection :as gp]
             ["fs" :as fs]
             ["path" :as path]
@@ -34,7 +34,7 @@
                       (->> (str/split-lines (.readFileSync fs lei-file "utf8"))
                            (map str/trim)
                            (remove str/blank?)
-                           (map str/upper-case)
+                           (map str/upper)
                            vec))
               :jurisdictions (comma-list (arg-value args "--jurisdiction" nil))
               :status (arg-value args "--status" nil)}]

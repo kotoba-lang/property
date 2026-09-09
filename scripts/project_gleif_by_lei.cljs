@@ -15,7 +15,7 @@
    Usage:
      nbb -cp src scripts/project_gleif_by_lei.cljs \\
        --lei-file /tmp/plane-leis.txt --out data/gleif-lei-joined.datoms.edn"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gleif-golden-copy :as gc]
             [kotoba.property.gleif-projection :as gp]
@@ -53,7 +53,7 @@
     (let [leis (->> (str/split-lines (.readFileSync fs lei-file "utf8"))
                     (map str/trim)
                     (remove str/blank?)
-                    (map str/upper-case)
+                    (map str/upper)
                     distinct
                     vec)
           batches (partition-all batch-size leis)

@@ -12,7 +12,7 @@
      nbb -cp src scripts/query_houjin_bangou_corpus.cljs --corpus <c> --name 'ＧＦＴＤ' --limit 20
      nbb -cp src scripts/query_houjin_bangou_corpus.cljs --corpus <c> --group-by company/region --kind 301"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.houjin-bangou-projection :as hp]
             [kotoba.property.houjin-bangou-zenken :as hb]
             ["fs" :as fs]

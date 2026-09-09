@@ -23,7 +23,7 @@
        --out <repo>/data/gbizinfo-joined.datoms.edn
        [--demo] [--max-requests N]"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             ["child_process" :as cp]
             ["fs" :as fs]
             ["path" :as path]))
