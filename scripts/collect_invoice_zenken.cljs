@@ -27,7 +27,7 @@
      nbb -cp src scripts/collect_invoice_zenken.cljs --download
      nbb -cp src scripts/collect_invoice_zenken.cljs --download --kinds all
      nbb -cp src scripts/collect_invoice_zenken.cljs --zip-dir ~/.cache/invoice --out <corpus.edn>"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.invoice-zenken :as inv]
             ["child_process" :as cp]

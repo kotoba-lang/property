@@ -21,7 +21,7 @@
      nbb -cp src scripts/report_closure_vs_kanpou.cljs --corpus <c>
        --kaisan <kanpou-kaisan.datoms.edn> [--out <summary.edn>]"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.houjin-bangou-zenken :as hb]
             ["fs" :as fs]
             ["readline" :as readline]))

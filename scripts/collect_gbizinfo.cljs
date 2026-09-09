@@ -18,7 +18,7 @@
        --numbers /tmp/plane-hb-numbers.txt --aspects subsidy,procurement,finance \\
        --out <repo>/data/gbizinfo-joined.datoms.edn
      nbb -cp src scripts/collect_gbizinfo.cljs --numbers <f> --demo --out /tmp/sample.edn"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gbizinfo :as gb]
             ["fs" :as fs]

@@ -15,7 +15,7 @@
      nbb -cp src scripts/relink_press_wire.cljs --records <press-wire.edn>
        --report <resolution.edn> [--dry-run]"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.press-wire :as pw]
             ["fs" :as fs]))
 

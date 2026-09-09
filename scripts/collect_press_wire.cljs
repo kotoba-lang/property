@@ -21,7 +21,7 @@
      nbb -cp src scripts/collect_press_wire.cljs --out <repo>/data/press-wire.datoms.edn
        [--report <resolution.edn>] [--names-out <file>] [--distributor prtimes]"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.press-wire :as pw]
             ["fs" :as fs]
             ["path" :as path]))

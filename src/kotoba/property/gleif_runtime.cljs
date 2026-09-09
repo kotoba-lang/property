@@ -1,5 +1,5 @@
 (ns kotoba.property.gleif-runtime
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def source-id "gleif-level-2")
 (def api-root "https://api.gleif.org/api/v1/lei-records")
@@ -13,10 +13,10 @@
      :corporate-relation/child-lei (get-in relation [:startNode :id])
      :corporate-relation/parent-lei (get-in relation [:endNode :id])
      :corporate-relation/type (-> (get-in relation [:type])
-                                  str/lower-case
+                                  str/lower
                                   (str/replace "_" "-")
                                   keyword)
-     :corporate-relation/status (-> (get-in relation [:status]) str/lower-case keyword)
+     :corporate-relation/status (-> (get-in relation [:status]) str/lower keyword)
      :corporate-relation/source source-id
      :corporate-relation/observed-at observed-at}))
 

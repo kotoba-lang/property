@@ -16,7 +16,7 @@
    the plane knows the child (who owns this?) or the parent (what does this
    own?). Streams the corpus line by line."
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.gleif-rr-golden-copy :as rr]
             ["fs" :as fs]
             ["path" :as path]
@@ -40,7 +40,7 @@
                       (->> (str/split-lines (.readFileSync fs lei-file "utf8"))
                            (map str/trim)
                            (remove str/blank?)
-                           (map str/upper-case)
+                           (map str/upper)
                            vec))
               :types (comma-list (arg-value args "--type" nil))
               :validation (comma-list (arg-value args "--validation" nil))

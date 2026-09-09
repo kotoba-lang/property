@@ -32,7 +32,7 @@
      # or ingest an archive already on disk
      nbb -cp src scripts/collect_houjin_bangou_zenken.cljs --zip ~/.cache/houjin-bangou/00_zenkoku_all_20260731.zip
      nbb -cp src scripts/collect_houjin_bangou_zenken.cljs --zip <path> --limit 1000 --out /tmp/sample.edn"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.houjin-bangou-zenken :as hb]
             ["child_process" :as cp]

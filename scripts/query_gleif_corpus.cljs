@@ -14,7 +14,7 @@
      nbb -cp src scripts/query_gleif_corpus.cljs --corpus <c> --group-by company/jurisdiction --top 20
      nbb -cp src scripts/query_gleif_corpus.cljs --corpus <c> --lei 5493006E0PFEMRJHSD11"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.gleif-projection :as gp]
             ["fs" :as fs]
             ["readline" :as readline]))
@@ -35,7 +35,7 @@
         top (js/parseInt (arg-value args "--top" "20") 10)
         show (js/parseInt (arg-value args "--show" "0") 10)
         lei (arg-value args "--lei" nil)
-        spec {:leis (when lei [(str/upper-case lei)])
+        spec {:leis (when lei [(str/upper lei)])
               :jurisdictions (comma-list (arg-value args "--jurisdiction" nil))
               :status (arg-value args "--status" nil)}]
     (when-not corpus

@@ -17,7 +17,7 @@
    Usage:
      nbb -cp src scripts/collect_gleif_rr_golden_copy.cljs --zip <rr-golden-copy.csv.zip>
      nbb -cp src scripts/collect_gleif_rr_golden_copy.cljs --zip <path> --out <corpus.edn> --limit 1000"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gleif-golden-copy :as l1]
             [kotoba.property.gleif-rr-golden-copy :as rr]

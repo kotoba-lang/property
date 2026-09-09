@@ -32,7 +32,7 @@
        --out <name-address.tsv> [--attempts <ledger.edn>] [--retry-days 60]
        [--limit N] [--delay-ms 800]"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.press-wire :as pw]
             ["fs" :as fs]))
 

@@ -9,7 +9,7 @@
      nbb -cp src scripts/report_contact_forms.cljs <label>=<file> [<label>=<file> ...]
 
    exit: 0 成功 / 2 1 件も読めなかった / 3 引数不足。"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.lang.edn :as edn]
             [kotoba.property.contact-form :as cf]
             ["fs" :as fs]))

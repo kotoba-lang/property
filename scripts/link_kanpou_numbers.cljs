@@ -16,7 +16,7 @@
        --records /tmp/kanpou-14d.edn --report /tmp/kanpou-resolution.edn \\
        --out <repo>/data/kanpou-kessan.datoms.edn"
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             ["fs" :as fs]
             ["path" :as path]))
 

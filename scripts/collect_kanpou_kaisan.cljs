@@ -21,7 +21,7 @@
    Usage:
      nbb -cp src scripts/collect_kanpou_kaisan.cljs --dates 20260818 --out /tmp/k.edn
      nbb -cp src scripts/collect_kanpou_kaisan.cljs --back 7 --out <repo>/data/kanpou-kaisan.datoms.edn"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.kanpou-kaisan :as kai]
             [kotoba.property.kanpou-kessan :as kk]

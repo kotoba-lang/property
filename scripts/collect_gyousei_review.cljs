@@ -21,7 +21,7 @@
        [--numbers <f>]       面が持つ法人番号だけに絞る
        [--fold]              会社 × 府省に畳む（面に置く形。明細は corpus に残る）
      nbb -cp src scripts/collect_gyousei_review.cljs --download --out <o>"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.gyousei-review :as gr]
             ["child_process" :as cp]
             ["fs" :as fs]

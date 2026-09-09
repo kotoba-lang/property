@@ -14,7 +14,7 @@
    Usage:
      nbb -cp src scripts/collect_jgrants.cljs --out data/jgrants-catalog.datoms.edn
      nbb -cp src scripts/collect_jgrants.cljs --out /tmp/j.edn --keywords 事業,補助 --no-detail"
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.jgrants :as jg]
             ["fs" :as fs]

@@ -19,7 +19,7 @@
    that resolve to exactly one entity are written; the rest are reported by
    name in `--report` and are NOT in the projection."
   (:require [cljs.reader :as reader]
-            [clojure.string :as str]
+            [kotoba.lang.text :as str]
             [kotoba.property.houjin-bangou-projection :as hp]
             [kotoba.property.houjin-bangou-zenken :as hb]
             ["fs" :as fs]
