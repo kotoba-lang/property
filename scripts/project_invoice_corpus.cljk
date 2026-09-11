@@ -12,7 +12,7 @@
    a corpus that never had them.
 
    Usage:
-     nbb -cp src scripts/project_invoice_corpus.cljk --corpus <c> \\
+     kbb --backend sci -cp src scripts/project_invoice_corpus.cljk --corpus <c> \\
        --number-file /tmp/plane-jp-numbers.txt --latest-only \\
        --out <repo>/data/invoice-joined.datoms.edn"
   (:require [cljs.reader :as reader]

@@ -12,7 +12,7 @@
    （最後に `:conflicts` として数を出す）。
 
    usage:
-     nbb -cp src scripts/relink_press_wire.cljk --records <press-wire.edn>
+     kbb --backend sci -cp src scripts/relink_press_wire.cljk --records <press-wire.edn>
        --report <resolution.edn> [--dry-run]"
   (:require [cljs.reader :as reader]
             [kotoba.lang.text :as str]

@@ -3,12 +3,12 @@
    query plane.
 
    Usage:
-     nbb -cp src scripts/project_gleif_rr_corpus.cljk \\
+     kbb --backend sci -cp src scripts/project_gleif_rr_corpus.cljk \\
        --corpus ~/.cache/gleif/gleif-rr-corpus.edn \\
        --lei-file /tmp/plane-leis.txt \\
        --out data/gleif-relationship-joined.datoms.edn
 
-     nbb -cp src scripts/project_gleif_rr_corpus.cljk --corpus <c> \\
+     kbb --backend sci -cp src scripts/project_gleif_rr_corpus.cljk --corpus <c> \\
        --type is-ultimately-consolidated-by --active-only \\
        --out data/gleif-relationship-ultimate.datoms.edn
 

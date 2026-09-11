@@ -22,7 +22,7 @@
    毎回それを測り直す。
 
    usage:
-     nbb -cp src scripts/project_houjin_bangou_closures.cljk --corpus <c>
+     kbb --backend sci -cp src scripts/project_houjin_bangou_closures.cljk --corpus <c>
        --numbers <file of 13-digit numbers> --out <repo>/data/closures.datoms.edn"
   (:require [cljs.reader :as reader]
             [kotoba.lang.text :as str]

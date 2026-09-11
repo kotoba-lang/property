@@ -2,8 +2,8 @@
   "var/ collector store -> data/property-ownership.datoms.edn (committed).
 
    Usage:
-     nbb -cp src scripts/export_ownership_datoms.cljk
-     nbb -cp src scripts/export_ownership_datoms.cljk \\
+     kbb --backend sci -cp src scripts/export_ownership_datoms.cljk
+     kbb --backend sci -cp src scripts/export_ownership_datoms.cljk \\
        --store var/kotoba-property/nyc-owned-properties.edn \\
        --out data/property-ownership.datoms.edn"
   (:require [cljs.reader :as reader]

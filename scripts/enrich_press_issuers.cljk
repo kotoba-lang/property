@@ -28,7 +28,7 @@
    所在地しか返さない。公表物であっても個人名は持ち歩かない。
 
    usage:
-     nbb -cp src scripts/enrich_press_issuers.cljk --records <press-wire.edn>
+     kbb --backend sci -cp src scripts/enrich_press_issuers.cljk --records <press-wire.edn>
        --out <name-address.tsv> [--attempts <ledger.edn>] [--retry-days 60]
        [--limit N] [--delay-ms 800]"
   (:require [cljs.reader :as reader]

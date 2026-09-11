@@ -23,7 +23,7 @@
    除外した件数は必ず印字する —— **黙って減らさない。**
 
    usage:
-     nbb -cp src scripts/export_lead_sheet.cljk --in <edn> --out <tsv> [--include-excluded]"
+     kbb --backend sci -cp src scripts/export_lead_sheet.cljk --in <edn> --out <tsv> [--include-excluded]"
   (:require [kotoba.lang.text :as str]
             [kotoba.lang.edn :as edn]
             ["fs" :as fs]))
@@ -87,7 +87,7 @@
           rows (concat (filter #(= "web" (channel %)) rows)
                        (remove #(= "web" (channel %)) rows))]
       (fs/writeFileSync
-       out (str "# 生成物。手で編集しない。再生成: nbb -cp src scripts/export_lead_sheet.cljk\n"
+       out (str "# 生成物。手で編集しない。再生成: kbb --backend sci -cp src scripts/export_lead_sheet.cljk\n"
                 "# source: " in "\n"
                 "# ⚠ 社内用。営業お断りの行は除外済み（下の件数を見ること）。\n"
                 "# ⚠ シグナルは『いつ・どの認定が公表されたか』の記録。税務助言をしない。\n"

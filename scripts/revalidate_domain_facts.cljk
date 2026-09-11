@@ -6,7 +6,7 @@
    既に committed になっている記録へ届く経路がここ —— **WHOIS を叩き直さない**
    （相手のサーバに用は無い。手元の記録を作り直すだけ）。
 
-   usage: nbb -cp src scripts/revalidate_domain_facts.cljk --records <file> [--dry-run]"
+   usage: kbb --backend sci -cp src scripts/revalidate_domain_facts.cljk --records <file> [--dry-run]"
   (:require [cljs.reader :as reader]
             [kotoba.lang.text :as str]
             [kotoba.property.domain-facts :as df]

@@ -18,7 +18,7 @@
      export GBIZINFO_TOKEN=...
 
    usage:
-     nbb -cp src scripts/gbizinfo_refresh.cljk
+     kbb --backend sci -cp src scripts/gbizinfo_refresh.cljk
        --plane <dir of *.datoms.edn>
        --out <repo>/data/gbizinfo-joined.datoms.edn
        [--demo] [--max-requests N]"

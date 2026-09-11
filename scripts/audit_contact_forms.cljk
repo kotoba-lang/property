@@ -20,7 +20,7 @@
    『JS フォーム』として数えられる。
 
    usage:
-     nbb -cp src scripts/audit_contact_forms.cljk \\
+     kbb --backend sci -cp src scripts/audit_contact_forms.cljk \\
        --out <f> --urls <tsv> --url-column 7 [--id-column 2] [--id-key houjin-bangou] \\
        [--limit N] [--concurrency 6] [--delay-ms 400] [--eu] [--merge-into <edn>]
 
@@ -206,7 +206,7 @@
                  (fs/writeFileSync
                   out (with-out-str
                         (println ";; 生成物。手で編集しない。")
-                        (println ";; 再生成: nbb -cp src scripts/audit_contact_forms.cljk")
+                        (println ";; 再生成: kbb --backend sci -cp src scripts/audit_contact_forms.cljk")
                         (println ";; 1 件も送信していない（GET のみ）。CAPTCHA は検出のみで回避しない。")
                         (prn (into [cov] records))))
                  (println (str "SCANNED\t" (count records)))

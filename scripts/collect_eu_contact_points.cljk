@@ -29,7 +29,7 @@
    organisationID を候補から外し、既存 + 新規を書き出す。全件が既存なら exit 2。
 
    usage:
-     nbb -cp src scripts/collect_eu_contact_points.cljk --out <edn> \\
+     kbb --backend sci -cp src scripts/collect_eu_contact_points.cljk --out <edn> \\
        --pool <tsv> [--limit N] [--concurrency 4] [--merge-into <edn>]
 
    ⚠ `npx --yes nbb` はこのマシンで壊れている。`nbb` を直接呼ぶ。
@@ -289,7 +289,7 @@
                                   :source/attribution eu/attribution)]
                    (fs/writeFileSync out (with-out-str
                                            (println ";; 生成物。手で編集しない。")
-                                           (println ";; 再生成: nbb -cp src scripts/collect_eu_contact_points.cljk")
+                                           (println ";; 再生成: kbb --backend sci -cp src scripts/collect_eu_contact_points.cljk")
                                            (println (str ";; " eu/attribution))
                                            (prn (into [cov] records))))
                    (println (str "SCANNED\t" (count records)))

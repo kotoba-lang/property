@@ -16,7 +16,7 @@
 (def default-store "var/kotoba-property/gb-ubo.edn")
 
 (defn- usage []
-  (str "Usage: COMPANIES_HOUSE_API_KEY=... clojure -M:collect "
+  (str "Usage: COMPANIES_HOUSE_API_KEY=... kbb -M:collect "
        "--company COMPANY_NUMBER [--company COMPANY_NUMBER] [--store PATH]"))
 
 (defn- parse-args [args]

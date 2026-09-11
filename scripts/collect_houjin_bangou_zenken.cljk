@@ -26,12 +26,12 @@
 
    Usage:
      # download this month's national file, then ingest it
-     nbb -cp src scripts/collect_houjin_bangou_zenken.cljk --download
+     kbb --backend sci -cp src scripts/collect_houjin_bangou_zenken.cljk --download
      # or fetch only, then run N shards over the archive it wrote
-     nbb -cp src scripts/collect_houjin_bangou_zenken.cljk --download --download-only
+     kbb --backend sci -cp src scripts/collect_houjin_bangou_zenken.cljk --download --download-only
      # or ingest an archive already on disk
-     nbb -cp src scripts/collect_houjin_bangou_zenken.cljk --zip ~/.cache/houjin-bangou/00_zenkoku_all_20260731.zip
-     nbb -cp src scripts/collect_houjin_bangou_zenken.cljk --zip <path> --limit 1000 --out /tmp/sample.edn"
+     kbb --backend sci -cp src scripts/collect_houjin_bangou_zenken.cljk --zip ~/.cache/houjin-bangou/00_zenkoku_all_20260731.zip
+     kbb --backend sci -cp src scripts/collect_houjin_bangou_zenken.cljk --zip <path> --limit 1000 --out /tmp/sample.edn"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.houjin-bangou-zenken :as hb]

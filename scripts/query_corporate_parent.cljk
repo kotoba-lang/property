@@ -21,7 +21,7 @@
   (let [lei (second (drop-while #(not= "--lei" %) *command-line-args*))
         store (or (second (drop-while #(not= "--store" %) *command-line-args*)) default-store)]
     (when-not lei
-      (binding [*out* *err*] (println "Usage: nbb -cp src scripts/query_corporate_parent.cljk --lei LEI"))
+      (binding [*out* *err*] (println "Usage: kbb --backend sci -cp src scripts/query_corporate_parent.cljk --lei LEI"))
       (js/process.exit 2))
     (let [state (reader/read-string (.readFileSync fs store "utf8"))
           records (concat (vals (:corporate-relations state)) (vals (:lei-records state)))

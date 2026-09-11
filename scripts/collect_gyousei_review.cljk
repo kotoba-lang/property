@@ -16,11 +16,11 @@
    （下記）で 200 が返る。robots.txt は存在しない（404 ページが返る）。
 
    usage:
-     nbb -cp src scripts/collect_gyousei_review.cljk --xlsx <file> --out <o>
+     kbb --backend sci -cp src scripts/collect_gyousei_review.cljk --xlsx <file> --out <o>
        [--dropped-out <f>]   組織だと言えず落とした名前（規則の点検用）
        [--numbers <f>]       面が持つ法人番号だけに絞る
        [--fold]              会社 × 府省に畳む（面に置く形。明細は corpus に残る）
-     nbb -cp src scripts/collect_gyousei_review.cljk --download --out <o>"
+     kbb --backend sci -cp src scripts/collect_gyousei_review.cljk --download --out <o>"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.gyousei-review :as gr]
             ["child_process" :as cp]

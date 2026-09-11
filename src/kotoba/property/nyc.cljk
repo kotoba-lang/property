@@ -12,7 +12,7 @@
 (def endpoint "https://data.cityofnewyork.us/resource/ynxg-k94i.json")
 
 (defn- usage []
-  "Usage: clojure -M:collect-nyc [--limit 500] [--store PATH]")
+  "Usage: kbb -M:collect-nyc [--limit 500] [--store PATH]")
 
 (defn- parse-args [args]
   (loop [args args result {:limit 500 :store default-store}]

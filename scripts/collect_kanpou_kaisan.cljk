@@ -19,8 +19,8 @@
    writing an empty file.
 
    Usage:
-     nbb -cp src scripts/collect_kanpou_kaisan.cljk --dates 20260818 --out /tmp/k.edn
-     nbb -cp src scripts/collect_kanpou_kaisan.cljk --back 7 --out <repo>/data/kanpou-kaisan.datoms.edn"
+     kbb --backend sci -cp src scripts/collect_kanpou_kaisan.cljk --dates 20260818 --out /tmp/k.edn
+     kbb --backend sci -cp src scripts/collect_kanpou_kaisan.cljk --back 7 --out <repo>/data/kanpou-kaisan.datoms.edn"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.kanpou-kaisan :as kai]
