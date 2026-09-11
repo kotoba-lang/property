@@ -20,7 +20,7 @@
   <array>
     <string>/opt/homebrew/bin/nbb</string>
     <string>-cp</string><string>src</string>
-    <string>scripts/gbizinfo_refresh.cljs</string>
+    <string>scripts/gbizinfo_refresh.cljk</string>
     <string>--plane</string>
     <string>/Users/junkawasaki/github/com-junkawasaki/orgs/com-junkawasaki/jp-go-nta-houjin-bangou/data,/Users/junkawasaki/github/com-junkawasaki/orgs/com-junkawasaki/jp-go-npb-kanpou/data</string>
     <string>--out</string>

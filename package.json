@@ -2,9 +2,9 @@
   "name": "kotoba-property",
   "private": true,
   "scripts": {
-    "query:owned": "nbb scripts/query_owned_property.cljs",
-    "query:corporate-parent": "nbb scripts/query_corporate_parent.cljs",
-    "query:property-parent": "nbb scripts/query_property_parent.cljs",
-    "query:source-audit": "nbb scripts/query_source_audit.cljs"
+    "query:owned": "nbb scripts/query_owned_property.cljk",
+    "query:corporate-parent": "nbb scripts/query_corporate_parent.cljk",
+    "query:property-parent": "nbb scripts/query_property_parent.cljk",
+    "query:source-audit": "nbb scripts/query_source_audit.cljk"
   }
 }
