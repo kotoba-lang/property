@@ -25,7 +25,7 @@
    叩き続けると遮断される —— `--delay-ms` は縮めない。
 
    usage:
-     nbb -cp src scripts/collect_domain_facts.cljk --web-presence <file> --out <file>
+     kbb --backend sci -cp src scripts/collect_domain_facts.cljk --web-presence <file> --out <file>
        [--attempts <ledger.edn>] [--retry-days 30] [--limit N] [--delay-ms 1500]"
   (:require [cljs.reader :as reader]
             [kotoba.lang.text :as str]

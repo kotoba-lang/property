@@ -9,10 +9,10 @@
    into the plane with `project_gleif_corpus.cljs`.
 
    Usage:
-     nbb -cp src scripts/query_gleif_corpus.cljk --corpus <c> --count
-     nbb -cp src scripts/query_gleif_corpus.cljk --corpus <c> --jurisdiction JP --status ISSUED --count
-     nbb -cp src scripts/query_gleif_corpus.cljk --corpus <c> --group-by company/jurisdiction --top 20
-     nbb -cp src scripts/query_gleif_corpus.cljk --corpus <c> --lei 5493006E0PFEMRJHSD11"
+     kbb --backend sci -cp src scripts/query_gleif_corpus.cljk --corpus <c> --count
+     kbb --backend sci -cp src scripts/query_gleif_corpus.cljk --corpus <c> --jurisdiction JP --status ISSUED --count
+     kbb --backend sci -cp src scripts/query_gleif_corpus.cljk --corpus <c> --group-by company/jurisdiction --top 20
+     kbb --backend sci -cp src scripts/query_gleif_corpus.cljk --corpus <c> --lei 5493006E0PFEMRJHSD11"
   (:require [cljs.reader :as reader]
             [kotoba.lang.text :as str]
             [kotoba.property.gleif-projection :as gp]

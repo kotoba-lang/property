@@ -10,7 +10,7 @@
    Requires `pdftotext` (poppler).
 
    Usage:
-     nbb -cp src scripts/collect_kanpou_chotatsu.cljk --back 14 --out <repo>/data/kanpou-chotatsu.datoms.edn"
+     kbb --backend sci -cp src scripts/collect_kanpou_chotatsu.cljk --back 14 --out <repo>/data/kanpou-chotatsu.datoms.edn"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.kanpou-chotatsu :as kc]

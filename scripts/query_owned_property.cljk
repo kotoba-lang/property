@@ -22,7 +22,7 @@
         parcel (second (drop-while #(not= "--parcel" %) args))
         store (or (second (drop-while #(not= "--store" %) args)) default-store)]
     (when-not parcel
-      (binding [*out* *err*] (println "Usage: nbb -cp src scripts/query_owned_property.cljk --parcel PARCEL"))
+      (binding [*out* *err*] (println "Usage: kbb --backend sci -cp src scripts/query_owned_property.cljk --parcel PARCEL"))
       (js/process.exit 2))
     (let [state (reader/read-string (.readFileSync fs store "utf8"))
           db (runtime/db (vals (:ownership-records state)))]

@@ -2,12 +2,12 @@
   "GLEIF corpus (cache, ~3.4M records) -> committed projection for the query plane.
 
    Usage:
-     nbb -cp src scripts/project_gleif_corpus.cljk \\
+     kbb --backend sci -cp src scripts/project_gleif_corpus.cljk \\
        --corpus ~/.cache/gleif/gleif-lei-corpus-20260801.edn \\
        --lei-file /tmp/plane-leis.txt \\
        --out data/gleif-lei-joined.datoms.edn
 
-     nbb -cp src scripts/project_gleif_corpus.cljk --corpus <c> \\
+     kbb --backend sci -cp src scripts/project_gleif_corpus.cljk --corpus <c> \\
        --jurisdiction JP --status ISSUED --out data/gleif-lei-jp.datoms.edn
 
    Streams the corpus line by line: it is larger than this process's heap."

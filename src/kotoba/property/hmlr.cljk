@@ -8,7 +8,7 @@
 (def default-store "var/kotoba-property/gb-ubo.edn")
 
 (defn- usage []
-  (str "Usage: clojure -M:collect-hmlr --csv PATH --source hmlr-uk-corporate-property "
+  (str "Usage: kbb -M:collect-hmlr --csv PATH --source hmlr-uk-corporate-property "
        "--observed-at ISO-8601 [--store PATH]"))
 
 (defn- parse-args [args]

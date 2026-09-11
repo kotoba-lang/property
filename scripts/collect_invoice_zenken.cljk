@@ -24,9 +24,9 @@
    JP/NTA-Invoice authority entry.
 
    Usage:
-     nbb -cp src scripts/collect_invoice_zenken.cljk --download
-     nbb -cp src scripts/collect_invoice_zenken.cljk --download --kinds all
-     nbb -cp src scripts/collect_invoice_zenken.cljk --zip-dir ~/.cache/invoice --out <corpus.edn>"
+     kbb --backend sci -cp src scripts/collect_invoice_zenken.cljk --download
+     kbb --backend sci -cp src scripts/collect_invoice_zenken.cljk --download --kinds all
+     kbb --backend sci -cp src scripts/collect_invoice_zenken.cljk --zip-dir ~/.cache/invoice --out <corpus.edn>"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.invoice-zenken :as inv]

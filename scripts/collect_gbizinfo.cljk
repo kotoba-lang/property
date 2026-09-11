@@ -14,10 +14,10 @@
      https://content.info.gbiz.go.jp/api/index.html → 利用申請 → メールで token
 
    Usage:
-     GBIZINFO_TOKEN=... nbb -cp src scripts/collect_gbizinfo.cljk \\
+     GBIZINFO_TOKEN=... kbb --backend sci -cp src scripts/collect_gbizinfo.cljk \\
        --numbers /tmp/plane-hb-numbers.txt --aspects subsidy,procurement,finance \\
        --out <repo>/data/gbizinfo-joined.datoms.edn
-     nbb -cp src scripts/collect_gbizinfo.cljk --numbers <f> --demo --out /tmp/sample.edn"
+     kbb --backend sci -cp src scripts/collect_gbizinfo.cljk --numbers <f> --demo --out /tmp/sample.edn"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.gbizinfo :as gb]

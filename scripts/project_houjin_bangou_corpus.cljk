@@ -2,13 +2,13 @@
   "法人番号 corpus (cache, ~5.8M rows) -> committed projection for the query plane.
 
    Usage:
-     nbb -cp src scripts/project_houjin_bangou_corpus.cljk \\
+     kbb --backend sci -cp src scripts/project_houjin_bangou_corpus.cljk \\
        --corpus ~/.cache/houjin-bangou/houjin-bangou-corpus.edn \\
        --name-file /tmp/plane-jp-names.txt \\
        --report /tmp/name-resolution.edn \\
        --out data/houjin-bangou-joined.datoms.edn
 
-     nbb -cp src scripts/project_houjin_bangou_corpus.cljk --corpus <c> \\
+     kbb --backend sci -cp src scripts/project_houjin_bangou_corpus.cljk --corpus <c> \\
        --prefecture JP-13 --kind 301 --latest-only --active-only \\
        --out data/houjin-bangou-tokyo.datoms.edn
 

@@ -18,7 +18,7 @@
    **未解決は「存在しない会社」ではない**。実測 192 名中 119 が解決（62%）。
 
    usage:
-     nbb -cp src scripts/collect_press_wire.cljk --out <repo>/data/press-wire.datoms.edn
+     kbb --backend sci -cp src scripts/collect_press_wire.cljk --out <repo>/data/press-wire.datoms.edn
        [--report <resolution.edn>] [--names-out <file>] [--distributor prtimes]"
   (:require [cljs.reader :as reader]
             [kotoba.lang.text :as str]

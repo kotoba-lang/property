@@ -12,7 +12,7 @@
    cleaner than it is; silently picking one would make it wrong.
 
    Usage:
-     nbb -cp src scripts/link_kanpou_numbers.cljk \\
+     kbb --backend sci -cp src scripts/link_kanpou_numbers.cljk \\
        --records /tmp/kanpou-14d.edn --report /tmp/kanpou-resolution.edn \\
        --out <repo>/data/kanpou-kessan.datoms.edn"
   (:require [cljs.reader :as reader]

@@ -13,7 +13,7 @@
    either source are interchangeable on the plane.
 
    Usage:
-     nbb -cp src scripts/project_gleif_by_lei.cljk \\
+     kbb --backend sci -cp src scripts/project_gleif_by_lei.cljk \\
        --lei-file /tmp/plane-leis.txt --out data/gleif-lei-joined.datoms.edn"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]

@@ -6,7 +6,7 @@
    持っており、ここは並べるだけ。
 
    usage:
-     nbb -cp src scripts/report_contact_forms.cljk <label>=<file> [<label>=<file> ...]
+     kbb --backend sci -cp src scripts/report_contact_forms.cljk <label>=<file> [<label>=<file> ...]
 
    exit: 0 成功 / 2 1 件も読めなかった / 3 引数不足。"
   (:require [kotoba.lang.text :as str]

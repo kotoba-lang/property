@@ -31,7 +31,7 @@
                         default-gleif-store)]
     (when-not parcel
       (binding [*out* *err*]
-        (println "Usage: nbb -cp src scripts/query_property_parent.cljk --parcel PARCEL"))
+        (println "Usage: kbb --backend sci -cp src scripts/query_property_parent.cljk --parcel PARCEL"))
       (js/process.exit 2))
     (let [property-state (reader/read-string (.readFileSync fs property-store "utf8"))
           gleif-state (reader/read-string (.readFileSync fs gleif-store "utf8"))

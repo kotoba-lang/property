@@ -12,7 +12,7 @@
    the corpus itself stays in `~/.cache/gleif` and is never committed.
 
    Usage:
-     nbb -cp src scripts/tally_gleif_universe.cljk \\
+     kbb --backend sci -cp src scripts/tally_gleif_universe.cljk \\
        --corpus ~/.cache/gleif/gleif-lei-corpus-20260825.edn \\
        --out data/gleif-universe-denominator.edn \\
        --declared-record-count 3411119

@@ -18,7 +18,7 @@
    前回 60,753 件中 60,710 件が `11` で、**43 件の説明が付いていない**。
 
    usage:
-     nbb -cp src scripts/report_closure_vs_kanpou.cljk --corpus <c>
+     kbb --backend sci -cp src scripts/report_closure_vs_kanpou.cljk --corpus <c>
        --kaisan <kanpou-kaisan.datoms.edn> [--out <summary.edn>]"
   (:require [cljs.reader :as reader]
             [kotoba.lang.text :as str]

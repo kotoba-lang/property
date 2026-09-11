@@ -17,7 +17,7 @@
    ⚠ 税務助言をしない。記録するのは『いつ・どの認定が公表されたか』だけ。
 
    usage:
-     nbb -cp src scripts/collect_intent_pool.cljk --out pool.tsv \\
+     kbb --backend sci -cp src scripts/collect_intent_pool.cljk --out pool.tsv \\
        [--since 2025-01-01] [--limit 2000] [--as-of 2026-08-25] [--cache /tmp/gbiz-bulk]
        [--refresh]   キャッシュを無視して落とし直す
 

@@ -28,9 +28,9 @@
    core. Only shard 0 writes the manifest line.
 
    Usage:
-     nbb scripts/collect_gleif_golden_copy.cljk --zip <path-to-golden-copy.csv.zip>
-     nbb scripts/collect_gleif_golden_copy.cljk --zip <path> --out <corpus.edn> --limit 1000
-     nbb scripts/collect_gleif_golden_copy.cljk --zip <path> --out <shard-1.edn> \\
+     kbb --backend sci scripts/collect_gleif_golden_copy.cljk --zip <path-to-golden-copy.csv.zip>
+     kbb --backend sci scripts/collect_gleif_golden_copy.cljk --zip <path> --out <corpus.edn> --limit 1000
+     kbb --backend sci scripts/collect_gleif_golden_copy.cljk --zip <path> --out <shard-1.edn> \\
        --skip 850000 --limit 850000 --no-manifest"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]

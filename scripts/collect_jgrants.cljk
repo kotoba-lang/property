@@ -12,8 +12,8 @@
    be ceremony rather than protection.
 
    Usage:
-     nbb -cp src scripts/collect_jgrants.cljk --out data/jgrants-catalog.datoms.edn
-     nbb -cp src scripts/collect_jgrants.cljk --out /tmp/j.edn --keywords 事業,補助 --no-detail"
+     kbb --backend sci -cp src scripts/collect_jgrants.cljk --out data/jgrants-catalog.datoms.edn
+     kbb --backend sci -cp src scripts/collect_jgrants.cljk --out /tmp/j.edn --keywords 事業,補助 --no-detail"
   (:require [kotoba.lang.text :as str]
             [kotoba.property.coverage-runtime :as coverage]
             [kotoba.property.jgrants :as jg]

@@ -7,7 +7,7 @@
 (def default-store "var/kotoba-property/gb-ubo.edn")
 
 (defn- usage []
-  "Usage: clojure -M:query (--company COMPANY_NUMBER | --parcel TITLE | --ownership-parcel PARCEL) [--store PATH]")
+  "Usage: kbb -M:query (--company COMPANY_NUMBER | --parcel TITLE | --ownership-parcel PARCEL) [--store PATH]")
 
 (defn- parse-args [args]
   (loop [args args result {:store default-store}]

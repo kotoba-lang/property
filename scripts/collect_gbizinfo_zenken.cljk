@@ -23,7 +23,7 @@
    status code ではなく **Content-Disposition の filename** と ZIP magic を見る。
 
    usage:
-     nbb -cp src scripts/collect_gbizinfo_zenken.cljk
+     kbb --backend sci -cp src scripts/collect_gbizinfo_zenken.cljk
        --numbers <file of 13-digit numbers>
        --out <repo>/data/gbizinfo-joined.datoms.edn
        [--sections subsidy,procurement,certification,finance,commendation]

@@ -34,8 +34,8 @@
    最後に**既存 + 新規**を書き出す（coverage は和集合で計算し直す）。
 
    usage:
-     nbb -cp src scripts/collect_contact_points.cljk --out <f> --names <f> [--limit N]
-     nbb -cp src scripts/collect_contact_points.cljk --out <f> --discover \\
+     kbb --backend sci -cp src scripts/collect_contact_points.cljk --out <f> --names <f> [--limit N]
+     kbb --backend sci -cp src scripts/collect_contact_points.cljk --out <f> --discover \\
          --prefecture 13 --employee-from 10 --employee-to 300 --industry G --limit 200
 
    Requires GBIZINFO_TOKEN（env か Keychain `gbizinfo-api-token`）。無ければ exit 3。"
@@ -448,7 +448,7 @@
                               :source/attribution cp/attribution)]
                (fs/writeFileSync out (with-out-str
                                        (println ";; 生成物。手で編集しない。")
-                                       (println ";; 再生成: nbb -cp src scripts/collect_contact_points.cljk")
+                                       (println ";; 再生成: kbb --backend sci -cp src scripts/collect_contact_points.cljk")
                                        (println (str ";; " cp/attribution))
                                        (prn (into [cov] records))))
                (println (str "SCANNED\t" (count records)))
