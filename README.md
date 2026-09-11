@@ -84,8 +84,8 @@ runtime is `kotoba` contracts -> ClojureScript -> `nbb`; the nbb scripts own
 the capability boundary for network and local-file I/O.
 
 ```bash
-nbb -cp src scripts/collect_nyc.cljs --limit 500
-nbb -cp src scripts/query_owned_property.cljs \
+nbb -cp src scripts/collect_nyc.cljk --limit 500
+nbb -cp src scripts/query_owned_property.cljk \
   --parcel US-NY-NYC:BBL:1017900009.0
 ```
 
@@ -100,8 +100,8 @@ relations between legal entities. It is not a natural-person UBO registry.
 
 ```bash
 npm install
-nbb -cp src scripts/collect_gleif.cljs --lei 529900T8BM49AURSDO55
-nbb -cp src scripts/query_corporate_parent.cljs --lei 529900T8BM49AURSDO55
+nbb -cp src scripts/collect_gleif.cljk --lei 529900T8BM49AURSDO55
+nbb -cp src scripts/query_corporate_parent.cljk --lei 529900T8BM49AURSDO55
 ```
 
 To expand global legal-entity coverage without credentials, collect bounded
@@ -109,7 +109,7 @@ GLEIF Level 1 pages by jurisdiction. Increase `--pages` deliberately because
 jurisdictions can contain hundreds of thousands of records.
 
 ```bash
-nbb -cp src scripts/collect_gleif_jurisdiction.cljs \
+nbb -cp src scripts/collect_gleif_jurisdiction.cljk \
   --jurisdiction US --pages 2 --page-size 100
 ```
 
@@ -127,16 +127,16 @@ curl -s 'https://goldencopy.gleif.org/api/v2/golden-copies/publishes?format=json
 curl -L -o ~/.cache/gleif/lei2-golden-copy.csv.zip '<url from above>'
 
 # 2. stream it into an EDN-lines corpus (line 1 is a provenance manifest)
-nbb -cp src scripts/collect_gleif_golden_copy.cljs \
+nbb -cp src scripts/collect_gleif_golden_copy.cljk \
   --zip ~/.cache/gleif/lei2-golden-copy.csv.zip \
   --out ~/.cache/gleif/gleif-lei-corpus.edn
 
 # 3. ask the corpus universe-scale questions (filters and counts, no joins)
-nbb -cp src scripts/query_gleif_corpus.cljs --corpus ~/.cache/gleif/gleif-lei-corpus.edn \
+nbb -cp src scripts/query_gleif_corpus.cljk --corpus ~/.cache/gleif/gleif-lei-corpus.edn \
   --group-by company/jurisdiction --top 20
 
 # 4. project the slice you want to join into the workspace query plane
-nbb -cp src scripts/project_gleif_corpus.cljs --corpus ~/.cache/gleif/gleif-lei-corpus.edn \
+nbb -cp src scripts/project_gleif_corpus.cljk --corpus ~/.cache/gleif/gleif-lei-corpus.edn \
   --jurisdiction JP --status ISSUED --out data/gleif-lei-jp.datoms.edn
 ```
 
@@ -166,15 +166,15 @@ path, and it needs no account at all.
 
 ```bash
 # 1. download this month's national file (~266 MB) and stream it into a corpus
-nbb -cp src scripts/collect_houjin_bangou_zenken.cljs --download
+nbb -cp src scripts/collect_houjin_bangou_zenken.cljk --download
 
 # 2. ask the corpus registry-scale questions (filters and counts, no joins)
-nbb -cp src scripts/query_houjin_bangou_corpus.cljs \
+nbb -cp src scripts/query_houjin_bangou_corpus.cljk \
   --corpus ~/.cache/houjin-bangou/houjin-bangou-corpus.edn \
   --group-by company/nta-kind
 
 # 3. project the slice you want to join into the workspace query plane
-nbb -cp src scripts/project_houjin_bangou_corpus.cljs \
+nbb -cp src scripts/project_houjin_bangou_corpus.cljk \
   --corpus ~/.cache/houjin-bangou/houjin-bangou-corpus.edn \
   --kind 101,201 --latest-only --active-only \
   --out <jp-go-nta-houjin-bangou>/data/houjin-bangou-public-bodies.datoms.edn
@@ -223,11 +223,11 @@ invoice, since when, and is that registration still live.
 
 ```bash
 # 法人 + 人格のない社団等 only (the default)
-nbb -cp src scripts/collect_invoice_zenken.cljs --download
+nbb -cp src scripts/collect_invoice_zenken.cljk --download
 # also the sole proprietors — node-local corpus only, see below
-nbb -cp src scripts/collect_invoice_zenken.cljs --download --kinds all
+nbb -cp src scripts/collect_invoice_zenken.cljk --download --kinds all
 
-nbb -cp src scripts/project_invoice_corpus.cljs \
+nbb -cp src scripts/project_invoice_corpus.cljk \
   --corpus ~/.cache/invoice-kohyo/invoice-corpus.edn \
   --number-file <法人番号 the plane already has> --latest-only \
   --out <jp-go-nta-houjin-bangou>/data/invoice-joined.datoms.edn
@@ -259,7 +259,7 @@ pay for them again:
 ## Which subsidies exist (jGrants)
 
 ```bash
-nbb -cp src scripts/collect_jgrants.cljs --out <jp-go-digital-jgrants>/data/jgrants-catalog.datoms.edn
+nbb -cp src scripts/collect_jgrants.cljk --out <jp-go-digital-jgrants>/data/jgrants-catalog.datoms.edn
 ```
 
 デジタル庁's public API, no key. Measured 2026-08-18: 18 keywords, **3,751
@@ -275,7 +275,7 @@ requires a 2+ character keyword and has no enumeration (an empty one is HTTP
 ## What the state gave, bought and recorded (gBizINFO)
 
 ```bash
-GBIZINFO_TOKEN=... nbb -cp src scripts/collect_gbizinfo.cljs \
+GBIZINFO_TOKEN=... nbb -cp src scripts/collect_gbizinfo.cljk \
   --numbers <法人番号 one per line> --aspects subsidy,procurement,finance \
   --out <jp-go-gbiz-info>/data/gbizinfo-joined.datoms.edn
 ```
@@ -304,7 +304,7 @@ and nobody else. The only public route for the rest is the Companies Act art.
 440 announcement, printed in 官報 every publication day.
 
 ```bash
-nbb -cp src scripts/collect_kanpou_kessan.cljs --back 14 --out <repo>/data/kanpou-kessan.datoms.edn
+nbb -cp src scripts/collect_kanpou_kessan.cljk --back 14 --out <repo>/data/kanpou-kessan.datoms.edn
 ```
 
 Measured 2026-08-18, 14 publication days: **1,303 決算公告 headlines → 472
@@ -335,7 +335,7 @@ gBizINFO aggregates 調達 from ministry publications; the 落札者等の公示
 removes that dependency.
 
 ```bash
-nbb -cp src scripts/collect_kanpou_chotatsu.cljs --back 30 --out <repo>/data/kanpou-chotatsu.datoms.edn
+nbb -cp src scripts/collect_kanpou_chotatsu.cljk --back 30 --out <repo>/data/kanpou-chotatsu.datoms.edn
 ```
 
 Measured 2026-08-18, 30 days / 20 procurement issues: **673 awards, ¥289.4bn
@@ -370,11 +370,11 @@ Japan press releases collect on distributors. This reads the distributor's own
 public feed and keeps the citation, not the release:
 
 ```bash
-nbb -cp src scripts/collect_press_wire.cljs --out <repo>/data/press-wire.datoms.edn \
+nbb -cp src scripts/collect_press_wire.cljk --out <repo>/data/press-wire.datoms.edn \
   --names-out /tmp/issuers.txt                       # then resolve the names…
-nbb -cp src scripts/project_houjin_bangou_corpus.cljs --corpus <c> \
+nbb -cp src scripts/project_houjin_bangou_corpus.cljk --corpus <c> \
   --name-file /tmp/issuers.txt --latest-only --report /tmp/res.edn --out /tmp/scratch.edn
-nbb -cp src scripts/collect_press_wire.cljs --out <repo>/data/press-wire.datoms.edn \
+nbb -cp src scripts/collect_press_wire.cljk --out <repo>/data/press-wire.datoms.edn \
   --report /tmp/res.edn                              # …and link them
 ```
 
@@ -413,12 +413,12 @@ curl -s 'https://goldencopy.gleif.org/api/v2/golden-copies/publishes?format=json
 curl -L -o ~/.cache/gleif/rr-golden-copy.csv.zip '<url from above>'
 
 # 2. stream it into an EDN-lines corpus (~5 min, 181 MB)
-nbb -cp src scripts/collect_gleif_rr_golden_copy.cljs \
+nbb -cp src scripts/collect_gleif_rr_golden_copy.cljk \
   --zip ~/.cache/gleif/rr-golden-copy.csv.zip \
   --out ~/.cache/gleif/gleif-rr-corpus.edn
 
 # 3. project the edges that touch LEIs the query plane already knows
-nbb -cp src scripts/project_gleif_rr_corpus.cljs \
+nbb -cp src scripts/project_gleif_rr_corpus.cljk \
   --corpus ~/.cache/gleif/gleif-rr-corpus.edn \
   --lei-file /tmp/plane-leis.txt \
   --out data/gleif-relationship-joined.datoms.edn
@@ -462,8 +462,8 @@ Ownership percentage (`:corporate-relation/quantifier-amount`) is present on
   natural-person data.
 
 ```bash
-nbb -cp src scripts/collect_nyc.cljs --limit 5000
-nbb -cp src scripts/export_ownership_datoms.cljs   # var/ -> data/
+nbb -cp src scripts/collect_nyc.cljk --limit 5000
+nbb -cp src scripts/export_ownership_datoms.cljk   # var/ -> data/
 ```
 
 Authority coverage is recorded in
@@ -479,7 +479,7 @@ When a licensed HMLR store and a GLEIF store contain the same UK company
 registration number, join them directly:
 
 ```bash
-nbb -cp src scripts/query_property_parent.cljs \
+nbb -cp src scripts/query_property_parent.cljk \
   --parcel GB-HMLR:TITLE_NUMBER
 ```
 
