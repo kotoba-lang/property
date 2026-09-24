@@ -1,5 +1,5 @@
 (ns kotoba.property.nyc-runtime-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.nyc-runtime :as nyc]))
 
 (def observed-at "2026-08-01T10:00:00Z")

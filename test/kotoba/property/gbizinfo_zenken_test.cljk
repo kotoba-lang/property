@@ -1,5 +1,5 @@
 (ns kotoba.property.gbizinfo-zenken-test
-  (:require [kotoba.lang.text] #?(:clj [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.lang.text] #?(:clj [kotoba.test :refer [deftest is testing]]
                :cljs [cljs.test :refer-macros [deftest is testing]])
             [kotoba.property.gbizinfo-zenken :as gz]))
 

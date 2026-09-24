@@ -1,5 +1,5 @@
 (ns kotoba.property.gbizinfo-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.gbizinfo :as gb]))
 
 ;; Shapes taken from live responses on 2026-08-18 (公開されている動作確認用トークン).

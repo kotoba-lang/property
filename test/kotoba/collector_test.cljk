@@ -1,5 +1,5 @@
 (ns kotoba.collector-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [kotoba.property.collector :as collector]))
 
 (deftest normalize-psc-minimizes-personal-data

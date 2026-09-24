@@ -1,5 +1,5 @@
 (ns kotoba.property.gleif-golden-copy-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.gleif-golden-copy :as gc]))
 
 (def header-cells

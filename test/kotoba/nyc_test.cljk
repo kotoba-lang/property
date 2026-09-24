@@ -1,5 +1,5 @@
 (ns kotoba.nyc-test
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [kotoba.property.nyc :as nyc]))
 
 (deftest normalize-nyc-public-owner

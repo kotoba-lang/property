@@ -1,5 +1,5 @@
 (ns kotoba.property.eu-contact-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.contact-point :as cp]
             [kotoba.property.eu-contact :as eu]
             [kotoba.property.eu-cordis :as cordis]))

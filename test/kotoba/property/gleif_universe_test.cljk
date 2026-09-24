@@ -1,5 +1,5 @@
 (ns kotoba.property.gleif-universe-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.gleif-universe :as gu]))
 
 (def apple {:company/lei "HWUPKR0MPOU8FGXBT394" :company/jurisdiction "US-CA"

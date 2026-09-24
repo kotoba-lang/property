@@ -1,5 +1,5 @@
 (ns kotoba.property.press-wire-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.press-wire :as pw]))
 
 ;; PR TIMES の index.rdf の実物から 1 件（2026-08-19 取得）。目次の <rdf:li> も
