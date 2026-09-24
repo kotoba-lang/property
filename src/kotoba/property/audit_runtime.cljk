@@ -1,5 +1,5 @@
 (ns kotoba.property.audit-runtime
-  (:require [clojure.set :as set]))
+  (:require [kotoba.lang.coll :as set]))
 
 (defn source-audit [source observed-at content-sha256 previous-records current-records]
   (let [previous-ids (set (keys previous-records))

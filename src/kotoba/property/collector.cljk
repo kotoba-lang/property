@@ -3,15 +3,14 @@
 
    The API key is supplied only through COMPANIES_HOUSE_API_KEY. The output is
    local governed state, not a repository artifact."
-  (:require [clojure.data.json :as json]
+  (:require [kotoba.bytes :as kbytes] [kotoba.json :as json]
             [kotoba.lang.edn :as edn]
-            [clojure.java.io :as io]
+            [kotoba.io :as io]
             [kotoba.lang.text :as str]
             [kotoba.property.ownership :as ownership])
   (:import [java.net URI]
            [java.net.http HttpClient HttpRequest HttpResponse$BodyHandlers]
-           [java.time Instant]
-           [java.util Base64]))
+           [java.time Instant]))
 
 (def default-store "var/kotoba-property/gb-ubo.edn")
 
@@ -29,8 +28,8 @@
       result)))
 
 (defn- basic-auth [api-key]
-  (str "Basic " (.encodeToString (Base64/getEncoder)
-                                  (.getBytes (str api-key ":") "UTF-8"))))
+  (str "Basic " (kbytes/base64-encode
+                                  (kbytes/utf8-bytes (str api-key ":")))))
 
 (defn- fetch-json [api-key company-number]
   (let [request (-> (HttpRequest/newBuilder)
@@ -68,7 +67,7 @@
       (when (:ubo/valid? (ownership/validate-ubo ubo)) ubo))))
 
 (defn- read-store [path]
-  (if (.exists (io/file path))
+  (if (io/exists? (io/file path))
     (edn/read-string (slurp path))
     {:ubo-records {} :source-state {}}))
 
