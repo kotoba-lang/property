@@ -1,9 +1,9 @@
 (ns kotoba.property.nyc
   "Collect non-personal NYC-owned property records from NYC Open Data."
-  (:require [clojure.data.json :as json]
+  (:require [kotoba.json :as json]
             [kotoba.lang.edn :as edn]
-            [clojure.java.io :as io]
-            [clojure.java.shell :as shell]
+            [kotoba.io :as io]
+            [kotoba.process :as shell]
             [kotoba.property.ownership :as ownership])
   (:import [java.time Instant]))
 
@@ -48,7 +48,7 @@
         (when (:ownership/valid? (ownership/validate-claim claim)) claim)))))
 
 (defn- read-store [path]
-  (if (.exists (io/file path))
+  (if (io/exists? (io/file path))
     (merge {:ownership-records {} :ubo-records {} :source-state {}}
            (edn/read-string (slurp path)))
     {:ownership-records {} :ubo-records {} :source-state {}}))
