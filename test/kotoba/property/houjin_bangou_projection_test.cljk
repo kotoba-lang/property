@@ -1,5 +1,5 @@
 (ns kotoba.property.houjin-bangou-projection-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.houjin-bangou-projection :as hp]
             [kotoba.property.houjin-bangou-zenken :as hb]))
 

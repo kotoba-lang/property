@@ -1,5 +1,5 @@
 (ns kotoba.property.gleif-projection-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.gleif-projection :as gp]))
 
 (def apple {:company/lei "HWUPKR0MPOU8FGXBT394" :company/jurisdiction "US-CA"

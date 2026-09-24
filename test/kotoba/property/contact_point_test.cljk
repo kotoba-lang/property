@@ -1,5 +1,5 @@
 (ns kotoba.property.contact-point-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.contact-point :as cp]))
 
 ;; ---------------------------------------------------------------------------

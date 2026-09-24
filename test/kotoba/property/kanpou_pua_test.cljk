@@ -2,7 +2,7 @@
   ;; ⚠ この file は最初 ns 形式を欠いたまま作られ、**テストランナーに拾われない
   ;; まま「0 failures」に見えていた**（件数が 139 のまま増えないことだけが手掛かり
   ;; だった）。走っていない検査は、走って問題が無かった検査と同じ顔をする。
-  (:require [clojure.test :refer [deftest is]]
+  (:require [kotoba.test :refer [deftest is]]
             [kotoba.property.kanpou-pua :as pua]))
 
 (deftest page-accounting-separates-unreadable-from-empty

@@ -1,5 +1,5 @@
 (ns kotoba.property.bulk-csv-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.bulk-csv :as csv]))
 
 (deftest quotes-and-embedded-newlines

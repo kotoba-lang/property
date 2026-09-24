@@ -1,5 +1,5 @@
 (ns kotoba.property.eu-cordis-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.bulk-csv :as csv]
             [kotoba.property.eu-cordis :as eu]))
 

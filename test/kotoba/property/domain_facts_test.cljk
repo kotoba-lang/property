@@ -1,5 +1,5 @@
 (ns kotoba.property.domain-facts-test
-  (:require [kotoba.lang.text] [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.lang.text] [kotoba.test :refer [deftest is testing]]
             [kotoba.property.domain-facts :as df]))
 
 (def jprs-cojp

@@ -1,6 +1,6 @@
 (ns kotoba.property.houjin-bangou-zenken-test
   (:require [kotoba.lang.text :as str]
-            [clojure.test :refer [deftest is testing]]
+            [kotoba.test :refer [deftest is testing]]
             [kotoba.property.houjin-bangou-zenken :as hb]))
 
 ;; A real row from the 2026-07-31 全国 publish, kept verbatim: the column

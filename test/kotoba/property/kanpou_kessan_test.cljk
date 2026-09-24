@@ -1,6 +1,6 @@
 (ns kotoba.property.kanpou-kessan-test
   (:require [kotoba.lang.text :as str]
-            [clojure.test :refer [deftest is testing]]
+            [kotoba.test :refer [deftest is testing]]
             [kotoba.property.kanpou-kessan :as kk]))
 
 ;; Verbatim pdftotext output from 官報 号外第184号 (2026-08-18), two notices:

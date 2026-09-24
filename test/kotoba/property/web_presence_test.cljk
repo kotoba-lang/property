@@ -1,5 +1,5 @@
 (ns kotoba.property.web-presence-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.web-presence :as wp]))
 
 (def basic

@@ -1,5 +1,5 @@
 (ns kotoba.property.kanpou-kaisan-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.lang.text :as str]
             [kotoba.property.kanpou-kaisan :as kai]))
 

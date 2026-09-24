@@ -1,5 +1,5 @@
 (ns kotoba.property.intent-score-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.intent-score :as sc]))
 
 (def as-of "2026-08-25")

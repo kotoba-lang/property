@@ -1,5 +1,5 @@
 (ns kotoba.property.contact-form-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [kotoba.test :refer [deftest is testing]]
             [kotoba.property.contact-form :as cf]))
 
 ;; ---------------------------------------------------------------------------

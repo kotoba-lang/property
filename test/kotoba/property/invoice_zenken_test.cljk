@@ -1,6 +1,6 @@
 (ns kotoba.property.invoice-zenken-test
   (:require [kotoba.lang.text :as str]
-            [clojure.test :refer [deftest is testing]]
+            [kotoba.test :refer [deftest is testing]]
             [kotoba.property.invoice-zenken :as inv]))
 
 ;; Real rows from the 2026-07-31 publish, verbatim. The column contract is
