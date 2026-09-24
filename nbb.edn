@@ -1,5 +1,8 @@
 {:paths ["src"]
  :deps {
+        ;; csv.core (kotoba-lang/org-ietf-csv) replaced clojure.data.csv here
+        ;; (2026-09-25). An explicit floor at the west pin.
+        io.github.kotoba-lang/org-ietf-csv {:git/sha "4272ff4f37aec9efc0224378fca136a59b90953f"}
         ;; kotoba.bytes replaced java.util.Base64 here (2026-09-24). An explicit
         ;; floor: tools.deps takes the NEWEST sha it is shown.
         io.github.kotoba-lang/bytes {:git/sha "d5259f35ab7c4f5a66e63ca29ed4dcf7ba3f1ac5"}
