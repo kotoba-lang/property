@@ -1,6 +1,6 @@
 (ns kotoba.property.hmlr
   "Import licensed HMLR CCOD/OCOD CSV data into local governed EDN state."
-  (:require [clojure.data.csv :as csv]
+  (:require [csv.core :as csv]
             [kotoba.lang.edn :as edn]
             [clojure.java.io :as io]
             [kotoba.property.ownership :as ownership]))
@@ -56,18 +56,20 @@
   (spit path (pr-str state)))
 
 (defn import-csv! [state source observed-at csv-path]
-  (with-open [reader (io/reader csv-path)]
-    (let [rows (csv/read-csv reader)
-          headers (first rows)
-          claims (keep #(normalize-row source observed-at (zipmap headers %))
-                       (rest rows))]
-      (assoc state
-             :ownership-records (into (:ownership-records state)
-                                      (map (juxt :ownership/id identity) claims))
-             :source-state (assoc (:source-state state) source
-                                  {:retrieved-at observed-at
-                                   :record-count (count claims)
-                                   :input csv-path})))))
+  ;; csv.core (kotoba-lang/org-ietf-csv, RFC 4180) parses TEXT, not a reader:
+  ;; the whole file is read, as clojure.data.csv's lazy seq was realised here
+  ;; by (count claims) anyway.
+  (let [rows (csv/read-csv (slurp csv-path))
+        headers (first rows)
+        claims (keep #(normalize-row source observed-at (zipmap headers %))
+                     (rest rows))]
+    (assoc state
+           :ownership-records (into (:ownership-records state)
+                                    (map (juxt :ownership/id identity) claims))
+           :source-state (assoc (:source-state state) source
+                                {:retrieved-at observed-at
+                                 :record-count (count claims)
+                                 :input csv-path}))))
 
 (defn -main [& args]
   (let [{:keys [csv source observed-at store]} (parse-args args)]
