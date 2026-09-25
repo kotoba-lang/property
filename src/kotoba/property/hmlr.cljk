@@ -2,7 +2,7 @@
   "Import licensed HMLR CCOD/OCOD CSV data into local governed EDN state."
   (:require [csv.core :as csv]
             [kotoba.lang.edn :as edn]
-            [clojure.java.io :as io]
+            [kotoba.io :as io]
             [kotoba.property.ownership :as ownership]))
 
 (def default-store "var/kotoba-property/gb-ubo.edn")
@@ -46,7 +46,7 @@
         (when (:ownership/valid? (ownership/validate-claim claim)) claim)))))
 
 (defn- read-store [path]
-  (if (.exists (io/file path))
+  (if (io/exists? (io/file path))
     (merge {:ownership-records {} :ubo-records {} :source-state {}}
            (edn/read-string (slurp path)))
     {:ownership-records {} :ubo-records {} :source-state {}}))
