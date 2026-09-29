@@ -17,7 +17,7 @@
        --out data/gleif-universe-denominator.edn \\
        --declared-record-count 3411119
 
-   Exit codes are three-valued on purpose (CLAUDE.md, 2026-08-13): 0 measured,
+   Exit codes are three-valued on purpose (AGENTS.md, 2026-08-13): 0 measured,
    1 measured and something was wrong, 3 could not measure. A run that scanned
    nothing must not be able to return the same value as a run that scanned
    everything and found nothing unusual."
