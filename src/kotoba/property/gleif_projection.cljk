@@ -8,7 +8,7 @@
    corpus stays whole and authoritative on disk; the plane loads the slice a
    given question needs.
 
-   What that costs, stated plainly (CLAUDE.md, kotobase one-ref rule): an LEI
+   What that costs, stated plainly (AGENTS.md, kotobase one-ref rule): an LEI
    outside the loaded slice does NOT join to market-intel, cloud-itonami-lei,
    or property ownership in Datalog. It is answerable only by a scan of the
    corpus (`scripts/query_gleif_corpus.cljk`), which cannot join. Widening the

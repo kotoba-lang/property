@@ -5,7 +5,7 @@
    ## なぜラップトップで走るのか（cell と逆）
 
    官報 cell はノードに常駐させた。こちらは逆で、**トークンがここにしか無い**から
-   ここで走る —— ノードに credential を置かない、という不変条件（CLAUDE.md）に
+   ここで走る —— ノードに credential を置かない、という不変条件（AGENTS.md）に
    従うと、鍵を要する仕事は operator 側に残る。
 
    ## トークンが無いときに何をするか
@@ -57,7 +57,7 @@
 
 (def keychain-service
   "Keychain の service 名。**狙い撃ちで 1 件だけ引く** —— keychain を列挙しない
-   （CLAUDE.md 安全床⑦）。オーナーが置く場所:
+   （AGENTS.md 安全床⑦）。オーナーが置く場所:
 
      security add-generic-password -s gbizinfo-api-token -a $USER -w '<token>'"
   "gbizinfo-api-token")

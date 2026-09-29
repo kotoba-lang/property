@@ -8,7 +8,7 @@
    so the whole registry is not a price a CLI query can pay. The corpus stays
    whole on disk; the plane loads the slice a question needs.
 
-   What that costs, stated plainly (CLAUDE.md, kotobase one-ref rule): a
+   What that costs, stated plainly (AGENTS.md, kotobase one-ref rule): a
    corporate number outside the loaded slice does NOT join to GLEIF,
    market-intel or cloud-itonami-lei in Datalog. It is answerable only by a
    scan of the corpus (`scripts/query_houjin_bangou_corpus.cljk`), which
